@@ -1,0 +1,1833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clustered Source code</title>
+
+    <style>
+        :root {
+            --primary-clr: #0284c7;
+            --primary-hover: #0369a1;
+
+            --bg-workspace: #f8fafc;
+            --surface-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-subtle: #e2e8f0;
+
+            --accent-blue: #2563eb;
+            --accent-green: #10b981;
+
+            --radius-md: 8px;
+            --radius-sm: 4px;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        html, body {
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            color: var(--text-main);
+            background-color: var(--bg-workspace);
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        a:not(.file-tag) {
+            color: var(--primary-clr);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease, text-decoration 0.2s ease;
+        }
+
+        a:not(.file-tag):hover {
+            color: var(--primary-hover);
+            text-decoration: underline;
+        }
+
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0 24px;
+            background: #fff;
+            height: 60px;
+            flex-shrink: 0;
+            z-index: 10;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            overflow-x: auto;
+        }
+
+        .nav-branding {
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            white-space: nowrap;
+        }
+
+        .nav-branding > span {
+            color: var(--primary-clr);
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            font-size: 18px;
+            white-space: nowrap;
+        }
+
+        .nav-task-switcher {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 8px;
+        }
+
+        .nav-task-btn {
+            padding: 8px 12px;
+            border: 1px solid var(--border-subtle);
+            background: #fff;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .nav-task-btn:hover {
+            background-color: var(--bg-workspace);
+            color: var(--text-main);
+        }
+
+        .nav-task-btn.active {
+            background: var(--primary-clr);
+            color: #fff;
+            border-color: var(--primary-clr);
+        }
+
+        .app-container {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 60px);
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        .left-sidebar {
+            width: 320px;
+            border-right: 1px solid var(--border-subtle);
+            background: #fff;
+            flex-shrink: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-section h3 {
+            font-size: 13px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            letter-spacing: 0.8px;
+            font-weight: 700;
+        }
+
+        .cluster-nav-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding-right: 4px;
+        }
+
+        .cluster-nav-list::-webkit-scrollbar,
+        .center-workspace::-webkit-scrollbar,
+        .file-grid-tray::-webkit-scrollbar,
+        .guidance-dock::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .cluster-nav-list::-webkit-scrollbar-thumb,
+        .center-workspace::-webkit-scrollbar-thumb,
+        .file-grid-tray::-webkit-scrollbar-thumb,
+        .guidance-dock::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .algo-group-header {
+            font-size: 16px;
+            color: var(--text-main);
+            font-weight: 700;
+            margin: 0 0 12px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .cluster-nav-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border: 1px solid transparent;
+            background: #fff;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 15px;
+            text-align: left;
+            transition: all 0.2s ease;
+            color: var(--text-muted);
+        }
+
+        .cluster-nav-btn:hover {
+            background-color: var(--bg-workspace);
+            color: var(--text-main);
+        }
+
+        .cluster-nav-btn.active {
+            background-color: rgba(2, 132, 199, 0.05);
+            border-color: rgba(2, 132, 199, 0.2);
+            color: var(--primary-clr);
+            font-weight: 600;
+        }
+
+        .progress-section {
+            padding: 12px 20px 16px 20px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .progress-task-row {
+            margin-bottom: 14px;
+        }
+
+        .progress-task-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .progress-task-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 7px;
+            line-height: 1.35;
+        }
+
+        .progress-dot-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .progress-cluster-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--border-subtle);
+            transition: background-color 0.3s ease;
+        }
+
+        .progress-cluster-dot.completed {
+            background-color: var(--accent-green);
+        }
+
+        .btn-export {
+            background-color: var(--primary-clr);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.2s;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2);
+            flex-shrink: 0;
+            margin: 0 20px 20px 20px;
+        }
+
+        .btn-export:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .center-workspace {
+            flex: 1;
+            padding: 24px;
+            overflow-y: scroll;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+        }
+
+        .cluster-card {
+            background: var(--surface-card);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 900px;
+            flex-shrink: 0;
+            margin-bottom: 40px;
+        }
+
+        .cluster-header {
+            padding: 18px 24px;
+            background: #fff;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .cluster-title-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .cluster-id-pill {
+            background: var(--primary-hover);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+        }
+
+        .cluster-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .section-primary-heading {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: none;
+            letter-spacing: normal;
+        }
+
+        .section-primary-heading svg {
+            color: var(--primary-clr);
+            flex-shrink: 0;
+        }
+
+        .accordion-primary-heading {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .accordion-primary-heading svg {
+            color: var(--primary-clr);
+            flex-shrink: 0;
+        }
+
+        .cluster-body-stacked {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: #fff;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .cluster-desc-content {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #2b2d42;
+            background: #fdfdfd;
+            padding: 16px;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+        }
+
+        .file-section-accordion {
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            background: #fff;
+        }
+
+        .accordion-header {
+            padding: 12px 16px;
+            background: #f8fafc;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 15px;
+            font-weight: 600;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .accordion-header:hover {
+            background: #f1f5f9;
+        }
+
+        .accordion-icon {
+            transition: transform 0.2s ease;
+        }
+
+        .file-section-accordion.open .accordion-icon {
+            transform: rotate(180deg);
+        }
+
+        .accordion-content {
+            display: none;
+            padding: 16px;
+            border-top: 1px solid var(--border-subtle);
+            background: #fafbfc;
+        }
+
+        .file-section-accordion.open .accordion-content {
+            display: block;
+        }
+
+        .file-grid-tray {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 8px;
+            max-height: 180px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        a.file-tag {
+            background: #fff;
+            border: 1px solid var(--border-subtle);
+            padding: 8px 10px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            color: var(--accent-blue);
+            font-family: monospace;
+            text-decoration: none;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        a.file-tag:hover {
+            background-color: rgba(2, 62, 138, 0.05);
+            border-color: var(--accent-blue);
+            white-space: normal;
+            word-break: break-all;
+        }
+
+        a.file-tag svg {
+            flex-shrink: 0;
+        }
+
+        .cluster-evaluation-bar {
+            background: #fafbfc;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .scenario-box {
+            background-color: rgba(2, 62, 138, 0.04);
+            border-left: 3px solid var(--accent-blue);
+            padding: 14px 18px;
+            margin-bottom: 24px;
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+        }
+
+        .scenario-box p {
+            font-size: 15px;
+            color: var(--text-main);
+            line-height: 1.5;
+            margin-top: 4px;
+        }
+
+        .eval-questions {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .question-item {
+            background: #fff;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 16px;
+        }
+
+        .question-text {
+            font-size: 15px;
+            font-weight: 500;
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        .question-text h3 {
+            font-size: 15px;
+            color: var(--primary-clr);
+            margin-bottom: 8px;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 4px;
+        }
+
+        .rating-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .rating-btn-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid var(--border-subtle);
+            padding: 8px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            cursor: pointer;
+            background: #fff;
+            transition: all 0.15s ease;
+        }
+
+        .rating-btn-label:hover {
+            background-color: var(--bg-workspace);
+            border-color: var(--text-muted);
+        }
+
+        .rating-btn-label.selected {
+            background-color: rgba(2, 132, 199, 0.08) !important;
+            border-color: var(--primary-clr);
+            color: var(--primary-clr);
+            font-weight: 600;
+        }
+
+        .guidance-dock {
+            width: 320px;
+            border-left: 1px solid var(--border-subtle);
+            background: #fff;
+            padding: 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex-shrink: 0;
+            height: 100%;
+        }
+
+        .dock-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary-clr);
+            border-bottom: 2px solid rgba(2, 132, 199, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .dock-header h4 {
+            font-size: 16px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .rubric-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 10px;
+        }
+
+        .rubric-item {
+            font-size: 15px;
+            line-height: 1.5;
+            background: var(--bg-workspace);
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            border-left: 3px solid var(--primary-clr);
+        }
+
+        .rubric-score {
+            font-weight: 700;
+            color: var(--text-main);
+            display: block;
+            margin-bottom: 4px;
+            font-size: 16px;
+        }
+
+        .empty-state {
+            color: var(--text-muted);
+            font-size: 16px;
+            text-align: center;
+            margin-top: 100px;
+        }
+
+        .error-state {
+            color: #b91c1c;
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            padding: 16px;
+            border-radius: var(--radius-md);
+            max-width: 800px;
+            line-height: 1.5;
+        }
+
+
+        .btn-export:disabled {
+            background-color: #cbd5e1;
+            cursor: not-allowed;
+            box-shadow: none;
+            opacity: 0.75;
+        }
+
+        .btn-export:disabled:hover {
+            background-color: #cbd5e1;
+        }
+
+        /* Participant ID Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .modal-box {
+            width: 100%;
+            max-width: 420px;
+            background: #ffffff;
+            border-radius: var(--radius-md);
+            padding: 24px;
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .modal-box h2 {
+            font-size: 20px;
+            color: var(--text-main);
+            margin-bottom: 10px;
+        }
+
+        .participant-id-input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            font-size: 15px;
+            outline: none;
+            margin-bottom: 8px;
+        }
+
+        .participant-id-input:focus {
+            border-color: var(--primary-clr);
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+        }
+
+        .participant-help-text {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.4;
+            margin-bottom: 10px;
+        }
+
+        .participant-error {
+            min-height: 18px;
+            font-size: 13px;
+            color: #b91c1c;
+            margin-bottom: 12px;
+        }
+
+        .modal-download-btn {
+            width: 100%;
+            background-color: var(--primary-clr);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .modal-download-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .thank-you-page {
+            min-height: 100vh;
+            width: 100vw;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+            color: var(--text-main);
+        }
+
+        .thank-you-message {
+            max-width: 760px;
+            font-size: 20px;
+            line-height: 1.7;
+            text-align: center;
+            color: var(--text-main);
+        }
+
+    </style>
+</head>
+
+<body>
+    <header class="top-nav">
+        <div class="nav-branding">
+            <span id="system_name"></span>
+            <div id="task-nav-container" class="nav-task-switcher"></div>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <aside class="left-sidebar">
+            <div class="sidebar-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 20px;">
+                <div class="algo-group-header">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="9" y1="3" x2="9" y2="21"></line>
+                    </svg>
+                    <span id="algo-title-sidebar">Clusters</span>
+                </div>
+
+                <div class="cluster-nav-list" id="cluster-list-container"></div>
+            </div>
+
+            <div class="sidebar-section progress-section">
+                <h3 style="margin-bottom: 8px;">Progress</h3>
+                <div id="task-progress-container"></div>
+            </div>
+
+            <button class="btn-export" id="download-btn" onclick="openParticipantModal()" disabled>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Download (.JSON)
+            </button>
+        </aside>
+
+        <section class="center-workspace" id="workspace-container">
+            <div class="empty-state">Loading data...</div>
+        </section>
+
+        <aside class="guidance-dock">
+            <div class="dock-header">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                <h4>Relevancy Rating</h4>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>Likert scale</h3>
+
+                <div class="rubric-list">
+                    <div class="rubric-item" style="border-left-color: #42a5f5;">
+                        <span class="rubric-score">Very relevant (5)</span>
+                        The cluster title and description contains sufficient information to answer the entire question.
+                    </div>
+
+                    <div class="rubric-item" style="border-left-color: #64b5f6;">
+                        <span class="rubric-score">Relevant (4)</span>
+                        The cluster's title and description contains information to answer part of the question.
+                    </div>
+
+                    <div class="rubric-item" style="border-left-color: #90caf9;">
+                        <span class="rubric-score">Distantly relevant (3)</span>
+                        The cluster's title and description does not contain information to answer the question, but the content relates vaguely to it.
+                    </div>
+
+                    <div class="rubric-item" style="border-left-color: #bbdefb;">
+                        <span class="rubric-score">Less relevant (2)</span>
+                        The cluster's title and description does not contain information to answer the question, but some entities relate to it.
+                    </div>
+
+                    <div class="rubric-item" style="border-left-color: #e3f2fd;">
+                        <span class="rubric-score">Not relevant (1)</span>
+                        The cluster's title and description has no relation to the question.
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+
+    <div class="modal-overlay" id="participant-modal" style="display: none;">
+        <div class="modal-box">
+            <h3>Participant ID Required</h3>
+
+            <form onsubmit="confirmParticipantDownload(event)">
+                <input
+                    type="text"
+                    id="participant-id-input"
+                    class="participant-id-input"
+                    placeholder="e.g., G10M7"
+                    autocomplete="off"
+                >
+
+                <div class="participant-help-text">
+                    Please enter your provided participant ID to download the file.
+                </div>
+
+                <div class="participant-error" id="participant-id-error"></div>
+
+                <button type="submit" class="modal-download-btn">
+                    Download
+                </button>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        const SYSTEM_NAME = "TIKA";
+        const ALGORITHM_NAME = "ARC";
+
+        /*
+            These placeholders will be replaced by build_final_html.py.
+            Do not edit them manually.
+        */
+        const TASKS = [
+    {
+        "id": "task1",
+        "name": "Task 1: Parse document",
+        "scenario": "Tika as a content analysis framework can parse text from a document. Depending on the type of the document, several parsers are considered. Your task is to explore the architectural design decisions that achieve the extraction of text and metadata from a document in Apache Tika.",
+        "questions": [
+            {
+                "id": "q1",
+                "text": "<h3>Existence</h3><b>Question 1:</b> What are the architectural components and connectors in Apache Tika that achieves parsing documents?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q1</u>: Briefly <u>name and describe each component</u>, determine their <u>type (physical or logical)</u>, determine  <u>how they are connected</u>, and <u>how they achieve the requirements</u>."
+            },
+            {
+                "id": "q2",
+                "text": "<h3>Property</h3><b>Question 2:</b> What solutions (e.g., patterns or tactics) are implemented to support quality attributes in Apache Tika to achieve parsing documents?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q2</u>: Mention the considered <u>quality attributes</u> and <u>describe the solutions</u> applied, and <u>how they achieve the requirements</u>."
+            },
+            {
+                "id": "q3",
+                "text": "<h3>Executive</h3><b>Question 3:</b> Which tools and technologies are integrated to achieve parsing documents in Apache Tika?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q3</u>: Mention the <u>technologies and tools</u>, their associated <u>components</u>, <u>rationale</u>, and <u>how they achieve the requirements</u>."
+            }
+        ]
+    },
+    {
+        "id": "task2",
+        "name": "Task 2: Performance requirement",
+        "scenario": "The performance of Tika is critical to parse documents in a short time period and with less memory. This is important as Tika is used in developing search engines that require fast responses. Your task is to explore the architectural design decisions that achieve the performance requirements in Apache Tika.",
+        "questions": [
+            {
+                "id": "q1",
+                "text": "<h3>Existence</h3><b>Question 1:</b> What are the architectural components and connectors in Apache Tika that support its performance requirement for parsing documents?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q1</u>: Briefly <u>name and describe each component</u>, determine their <u>type (physical or logical)</u>, determine  <u>how they are connected</u>, and <u>how they achieve the requirements</u>."
+            },
+            {
+                "id": "q2",
+                "text": "<h3>Property</h3><b>Question 2:</b> What solutions (e.g., patterns or tactics) are implemented to support the performance quality attribute in Apache Tika for parsing documents?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q2</u>: Mention the considered <u>quality attributes</u> and <u>describe the solutions</u> applied, and <u>how they achieve the requirements</u>."
+            },
+            {
+                "id": "q3",
+                "text": "<h3>Executive</h3><b>Question 3:</b> Which tools and technologies are integrated to achieve its performance requirement in Apache Tika for parsing documents?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q3</u>: Mention the <u>technologies and tools</u>, their associated <u>components</u>, <u>rationale</u>, and <u>how they achieve the requirements</u>."
+            }
+        ]
+    }
+];
+        const clusters = [
+    {
+        "cluster_ID": "Cluster_01",
+        "title": "Apache Tika Document Parsing and Extraction",
+        "description": "Cluster 1 revolves around Apache Tika's document parsing and extraction capabilities. It includes utilities for extracting and parsing embedded documents, managing document detection and parsing processes, and handling metadata. Key components interact via the ParseContext and utilize technologies like SAX for XML parsing. This cluster ensures robust document processing with features like recursive parsing, embedded document handling, and secure content management, leveraging Apache Tika and Java technologies.",
+        "files": [
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/extractor/EmbeddedDocumentUtil.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/extractor/ParsingEmbeddedDocumentExtractor.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/AutoDetectParser.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/ParseRecord.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/RecursiveParserWrapper.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/sax/AbstractRecursiveParserWrapperHandler.java"
+            }
+        ]
+    },
+    {
+        "cluster_ID": "Cluster_02",
+        "title": "Apache Tika MIME Type Detection",
+        "description": "Cluster 2 focuses on MIME type detection using Apache Tika. It includes the `org.apache.tika.detect` package, which combines multiple detection mechanisms for accurate MIME type identification, and the `org.apache.tika.mime` package, which manages media types and performs probabilistic detection. Key components interact via composite and probabilistic detection patterns, leveraging Apache Tika's internal classes and Java collections for efficient storage and retrieval. This cluster ensures scalable and reliable content identification, maintaining high performance and maintainability through modular design and dynamic loading of detectors.",
+        "files": [
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/CompositeDetector.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/DefaultDetector.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/DefaultProbDetector.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/mime/MediaTypeRegistry.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/mime/ProbabilisticMimeDetectionSelector.java"
+            }
+        ]
+    },
+    {
+        "cluster_ID": "Cluster_03",
+        "title": "Document Processing and Metadata Extraction Framework",
+        "description": "Cluster 3 encompasses the Apache Tika library, which focuses on document processing, metadata extraction, and embedding. Key components include the core Tika modules for type detection, parsing, and translation, along with configuration management, digest computation, metadata embedding, and exception handling. The architecture ensures scalable and flexible document handling, supporting various formats and embedding metadata from diverse sources. Technologies used include Java, Apache Tika, and external tools like exiftool. The system demonstrates strong maintainability and reliability through modular design and robust error handling, making it suitable for large-scale document processing tasks.",
+        "files": [
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/Tika.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/config/ConfigDeserializer.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/config/EmbeddedLimits.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/config/OutputLimits.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/config/ParseContextConfig.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/config/SelfConfiguring.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/config/ServiceLoader.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/config/TikaActivator.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/config/TikaProgressTracker.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/config/TimeoutLimits.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/digest/CompositeDigester.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/digest/DigestHelper.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/digest/Digester.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/digest/InputStreamDigester.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/digest/SkipContainerDocumentDigest.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/embedder/Embedder.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/embedder/ExternalEmbedder.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/exception/CorruptedFileException.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/exception/WriteLimitReachedException.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/exception/ZeroByteFileException.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/extractor/ContainerExtractor.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/extractor/EmbeddedDocumentExtractor.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/extractor/EmbeddedDocumentExtractorFactory.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/extractor/EmbeddedDocumentUtil.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/extractor/EmbeddedResourceHandler.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/extractor/ParentContentHandler.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/extractor/ParserContainerExtractor.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/extractor/StandardExtractorFactory.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/io/FilenameUtils.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/io/TemporaryResources.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/language/detect/LanguageDetector.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/metadata/ExternalProcess.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/metadata/Property.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/metadata/filter/CompositeMetadataFilter.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/metadata/filter/MetadataFilter.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/metadata/filter/MetadataFilterBase.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/metadata/filter/NoOpFilter.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/metadata/filter/RemoveByMimeMetadataFilter.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/mime/MimeTypes.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/renderer/CompositeRenderer.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/renderer/Renderer.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/sax/BasicContentHandlerFactory.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/sax/BodyContentHandler.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/sax/ContentHandlerFactory.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/sax/RecursiveParserWrapperHandler.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/sax/SecureContentHandler.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/sax/TaggedContentHandler.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/sax/WriteLimiter.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/sax/WriteOutContentHandler.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/sax/XHTMLContentHandler.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/utils/ConcurrentUtils.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/utils/ExceptionUtils.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/utils/FileProcessResult.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/utils/ParserUtils.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/utils/ProcessUtils.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/utils/RegexUtils.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/utils/ServiceLoaderUtils.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/utils/StringUtils.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/utils/XMLReaderUtils.java"
+            }
+        ]
+    },
+    {
+        "cluster_ID": "Cluster_04",
+        "title": "Apache Tika Document Parsing and Metadata Extraction",
+        "description": "Cluster 4 consists of Apache Tika's document parsing and metadata extraction capabilities. It includes configuring parsers, adding post-processing, and customizing parsing behavior using decorators and multiplexers. Key quality attributes include flexibility and extensibility due to the use of decorators and the ability to handle various file formats. Technologies employed are Apache Tika, Java, and SAX for XML parsing, ensuring robust and flexible document processing.",
+        "files": [
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/AutoDetectParserConfig.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/ParserPostProcessor.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/sax/ContentHandlerDecoratorFactory.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/sax/TeeContentHandler.java"
+            }
+        ]
+    },
+    {
+        "cluster_ID": "Cluster_05",
+        "title": "Apache Tika Document Parsing and Error Handling",
+        "description": "Cluster 5 focuses on Apache Tika's document parsing and error handling mechanisms. Key components include detectors for identifying document types, custom exceptions for managing errors, input stream handling, metadata management, and parser implementations. This cluster ensures robust document processing with fallback mechanisms, detailed error reporting, and consistent metadata extraction. Technologies used include Java, Apache Tika, Apache Commons IO, and Apache Tika's internal utilities. Scalability is achieved through modular design and fallback strategies, while maintainability is enhanced by clear exception handling and metadata management practices.",
+        "files": [
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/EmptyDetector.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/FileCommandDetector.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/OverrideDetector.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/exception/TikaException.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/io/TikaInputStream.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/metadata/TikaCoreProperties.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/AbstractParser.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/ErrorParser.java"
+            }
+        ]
+    },
+    {
+        "cluster_ID": "Cluster_06",
+        "title": "Metadata and Password Handling in Apache Tika",
+        "description": "Cluster 6 encompasses metadata management and password handling in Apache Tika. The org.apache.tika.metadata package centralizes metadata storage and management, enforcing write limitations and integrating with date handling utilities. The org.apache.tika.parser package provides mechanisms for supplying passwords to parsers, supporting dynamic retrieval from document metadata and offering default configurations. Both components rely on Apache Tika, Java standard libraries, and ISO-8601 date format handling, ensuring security and maintainability in document processing workflows.",
+        "files": [
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/metadata/Metadata.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/PasswordProvider.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/SimplePasswordProvider.java"
+            }
+        ]
+    },
+    {
+        "cluster_ID": "Cluster_07",
+        "title": "Document Type Detection System",
+        "description": "Cluster 7 consists of the Apache Tika detect and MIME packages, which work together to detect document types using magic numbers. The Magic Detection Module reads document streams, compares them to predefined byte patterns, and returns the detected media type. The Magic Match Mechanism defines and applies magic-based file type detection, integrating with the MagicDetector to ensure accurate identification. The system leverages Java and Apache Tika for robust content detection, ensuring reliability and maintainability in document processing tasks.",
+        "files": [
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/MagicDetector.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/mime/MagicMatch.java"
+            }
+        ]
+    },
+    {
+        "cluster_ID": "Cluster_08",
+        "title": "Content Detection and Bounded Stream Handling",
+        "description": "Cluster 8 focuses on content detection and efficient stream handling using Apache Tika and Java. It includes the DetectHelper module for creating a TikaInputStream from a limited stream portion and setting metadata, ensuring content detection without full file spooling. Additionally, it features Bounded Input Stream Handling for managing input streams with a defined byte limit, optimizing resource usage. Key technologies used are Apache Tika, Java, and Apache Commons IO.",
+        "files": [
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/DetectHelper.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/io/BoundedInputStream.java"
+            }
+        ]
+    },
+    {
+        "cluster_ID": "Cluster_09",
+        "title": "Apache Tika Document Parsing and Encoding Handling",
+        "description": "Cluster 9 focuses on Apache Tika's document parsing and encoding handling capabilities. Key components include character encoding detection, external process management, and multiple parser integration. This cluster leverages Java and Apache Tika for robust document parsing, utilizing internal interactions such as `AutoDetectReader`, `CompositeParser`, and `AbstractMultipleParser`. Quality attributes include reliability through comprehensive error handling and maintainability via modular design. Technologies used include Apache Tika, Java, and SAX for content handling, with dependencies on Apache Commons IO and SLF4J for additional functionality and logging.",
+        "files": [
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/AutoDetectReader.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/BOMDetector.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/CharsetSupersets.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/CompositeEncodingDetector.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/DefaultEncodingDetector.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/EncodingDetector.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/EncodingDetectorContext.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/EncodingResult.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/MetaEncodingDetector.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/MetadataCharsetDetector.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/NNExampleModelDetector.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/NNTrainedModel.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/NNTrainedModelBuilder.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/OverrideEncodingDetector.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/TextDetector.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/TextStatistics.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/TrainedModel.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/TrainedModelDetector.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/XmlRootExtractor.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/AbstractEncodingDetectorParser.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/AbstractExternalProcessParser.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/CompositeParser.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/DefaultParser.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/DelegatingParser.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/EmptyParser.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/NetworkParser.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/Parser.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/ParserDecorator.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/ParsingIntent.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/ParsingReader.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/RecursiveParserWrapper.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/RegexCaptureParser.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/RegexCaptureParserConfig.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/RenderingParser.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/StatefulParser.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/external/ExternalParser.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/external/ExternalParserConfig.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/multiple/AbstractMultipleParser.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/multiple/FallbackParser.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/multiple/SupplementingParser.java"
+            }
+        ]
+    },
+    {
+        "cluster_ID": "Cluster_10",
+        "title": "Document Content Detection and MIME Handling",
+        "description": "Cluster 10 comprises the `org.apache.tika.detect` and `org.apache.tika.mime` packages, which work together to detect document content types and handle MIME types. The `detect` module identifies document types using metadata, names, and initial content, ensuring consistent content type identification. The `mime` module manages and parses media types for internet data transmission. Both modules leverage Java standard libraries and regular expressions for robust content and type handling, supporting scalable and maintainable document processing systems.",
+        "files": [
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/Detector.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/NameDetector.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/TypeDetector.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/detect/ZeroSizeFileDetector.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/mime/MediaType.java"
+            }
+        ]
+    },
+    {
+        "cluster_ID": "Cluster_11",
+        "title": "Document Encryption Handling and Parsing",
+        "description": "Cluster 11 focuses on handling encrypted documents through exception management and decryption. It includes the Apache Tika Exception Handling package for managing document processing errors and the CryptoParser module for decrypting and parsing encrypted content. The architecture ensures robust error handling, secure decryption, and seamless integration with Tika's parsing capabilities. Key technologies include Java and the Apache Tika library, ensuring maintainability and reliability in document processing workflows.",
+        "files": [
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/exception/EncryptedDocumentException.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/CryptoParser.java"
+            }
+        ]
+    },
+    {
+        "cluster_ID": "Cluster_12",
+        "title": "Tika Parser Context Configuration",
+        "description": "Cluster 12 manages Apache Tika parser configurations and context through the `org.apache.tika.config` and `org.apache.tika.parser` packages. It leverages Java Records and JSON for type-safe configuration handling and supports context-specific customizations via `ParseContext`. Key quality attributes include maintainability due to type-safe configurations and performance from efficient context management. Technologies used include Java Records, JSON, Apache Tika's Metadata, and the Java Standard Library.",
+        "files": [
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/config/JsonConfig.java"
+            },
+            {
+                "path": "https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/parser/ParseContext.java"
+            }
+        ]
+    }
+];
+
+        document.getElementById("system_name").textContent = "Project: " + SYSTEM_NAME;
+
+        let currentActiveTask = TASKS.length > 0 ? TASKS[0].id : null;
+        let currentActiveCluster = null;
+        let evaluationAnswers = {};
+
+        function initDashboard() {
+            renderTopTaskSwitcher();
+            renderSidebar();
+            updateProgressIndicators();
+
+            if (clusters.length > 0) {
+                selectCluster(clusters[0].cluster_ID);
+            } else {
+                document.getElementById("workspace-container").innerHTML = `
+                    <div class="empty-state">No clusters found.</div>
+                `;
+            }
+        }
+
+        function renderTopTaskSwitcher() {
+            const container = document.getElementById("task-nav-container");
+            container.innerHTML = "";
+
+            TASKS.forEach(task => {
+                const btn = document.createElement("button");
+                btn.className = `nav-task-btn ${task.id === currentActiveTask ? "active" : ""}`;
+                btn.innerText = task.name;
+
+                btn.onclick = () => {
+                    currentActiveTask = task.id;
+
+                    document.querySelectorAll(".nav-task-btn").forEach(b => {
+                        b.classList.remove("active");
+                    });
+
+                    btn.classList.add("active");
+
+                    renderSidebar();
+                    renderWorkspaceCard();
+                    updateProgressIndicators();
+                };
+
+                container.appendChild(btn);
+            });
+        }
+
+        function renderSidebar() {
+            const container = document.getElementById("cluster-list-container");
+            let html = "";
+
+            clusters.forEach(cluster => {
+                html += `
+                    <button class="cluster-nav-btn ${currentActiveCluster === cluster.cluster_ID ? "active" : ""}"
+                            id="nav-${cluster.cluster_ID}"
+                            onclick="selectCluster('${cluster.cluster_ID}')">
+                        <span>${cluster.cluster_ID}</span>
+                    </button>
+                `;
+            });
+
+            container.innerHTML = html;
+            updateProgressIndicators();
+        }
+
+        function checkTaskCompletion(clusterId, taskId) {
+            const task = TASKS.find(t => t.id === taskId);
+
+            if (!task) return false;
+
+            return task.questions.every(q => {
+                const uniqueKey = `${clusterId}_${taskId}_${q.id}`;
+                return evaluationAnswers[uniqueKey];
+            });
+        }
+
+        function selectCluster(clusterId) {
+            currentActiveCluster = clusterId;
+
+            document.querySelectorAll(".cluster-nav-btn").forEach(btn => {
+                btn.classList.remove("active");
+            });
+
+            const activeBtn = document.getElementById(`nav-${clusterId}`);
+
+            if (activeBtn) {
+                activeBtn.classList.add("active");
+            }
+
+            renderWorkspaceCard();
+        }
+
+        function toggleAccordion(element) {
+            element.parentElement.classList.toggle("open");
+        }
+
+        function renderWorkspaceCard() {
+            const container = document.getElementById("workspace-container");
+            const cluster = clusters.find(c => c.cluster_ID === currentActiveCluster);
+
+            if (!cluster) {
+                container.innerHTML = `<div class="empty-state">Select a cluster from the sidebar to begin evaluation.</div>`;
+                return;
+            }
+
+            const activeTaskData = TASKS.find(t => t.id === currentActiveTask);
+
+            if (!activeTaskData) {
+                container.innerHTML = `<div class="empty-state">No active task selected.</div>`;
+                return;
+            }
+
+            let filesHTML = "";
+
+            cluster.files.forEach(file => {
+                filesHTML += `
+                    <a href="${file.path}" target="_blank" class="file-tag" title="${file.path}">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                        ${file.path.split("/").pop()}
+                    </a>
+                `;
+            });
+
+            let evalRowsHTML = "";
+
+            activeTaskData.questions.forEach(question => {
+                const uniqueKey = `${cluster.cluster_ID}_${activeTaskData.id}_${question.id}`;
+                const savedValue = evaluationAnswers[uniqueKey] || "";
+                let optionsHTML = "";
+
+                for (let score = 1; score <= 5; score++) {
+                    let radioLabel = "";
+                    let color = "#";
+
+                    switch (score) {
+                        case 1:
+                            radioLabel = "Not relevant (1)";
+                            color += "e3f2fd";
+                            break;
+                        case 2:
+                            radioLabel = "Less relevant (2)";
+                            color += "bbdefb";
+                            break;
+                        case 3:
+                            radioLabel = "Distantly relevant (3)";
+                            color += "90caf9";
+                            break;
+                        case 4:
+                            radioLabel = "Relevant (4)";
+                            color += "64b5f6";
+                            break;
+                        case 5:
+                            radioLabel = "Very relevant (5)";
+                            color += "42a5f5";
+                            break;
+                    }
+
+                    const isSelected = savedValue === radioLabel ? "selected" : "";
+
+                    optionsHTML += `
+                        <label class="rating-btn-label ${isSelected}"
+                               style="background:${color}"
+                               onclick="recordRating('${uniqueKey}', '${radioLabel}', this)">
+                            <input type="radio"
+                                   name="${uniqueKey}"
+                                   value="${radioLabel}"
+                                   style="display:none;"
+                                   ${isSelected ? "checked" : ""}>
+                            <span>${radioLabel}</span>
+                        </label>
+                    `;
+                }
+
+                evalRowsHTML += `
+                    <div class="question-item">
+                        <div class="question-text">${question.text}</div>
+                        <div class="rating-row">${optionsHTML}</div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = `
+                <div class="cluster-card">
+                    <div class="cluster-header">
+                        <div class="cluster-title-area">
+                            <span class="cluster-id-pill">${cluster.cluster_ID}</span>
+                            <h3 class="cluster-title">${cluster.title}</h3>
+                        </div>
+                    </div>
+
+                    <div class="cluster-body-stacked">
+                        <div class="desc-box">
+                            <div class="section-primary-heading">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                                Description
+                            </div>
+                            <div class="cluster-desc-content">${cluster.description}</div>
+                        </div>
+
+                        <div class="file-section-accordion">
+                            <div class="accordion-header" onclick="toggleAccordion(this)">
+                                <div class="accordion-primary-heading">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                        <polyline points="15 3 21 3 21 9"></polyline>
+                                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                                    </svg>
+                                    Source Code files (${cluster.files.length} files)
+                                </div>
+
+                                <svg class="accordion-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </div>
+
+                            <div class="accordion-content">
+                                <div class="file-grid-tray">${filesHTML}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cluster-evaluation-bar">
+                        <div class="scenario-box">
+                            <div class="section-primary-heading" style="margin-bottom: 8px;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                                Task Scenario
+                            </div>
+                            <p>${activeTaskData.scenario}</p>
+                        </div>
+
+                        <div class="section-primary-heading">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                            Task Questions
+                        </div>
+
+                        <div class="eval-questions">
+                            ${evalRowsHTML}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            container.scrollTop = 0;
+        }
+
+        function recordRating(uniqueKey, radioLabel, element) {
+            evaluationAnswers[uniqueKey] = radioLabel;
+
+            const parentRow = element.parentElement;
+
+            parentRow.querySelectorAll(".rating-btn-label").forEach(label => {
+                label.classList.remove("selected");
+            });
+
+            element.classList.add("selected");
+
+            const input = element.querySelector("input[type='radio']");
+
+            if (input) {
+                input.checked = true;
+            }
+
+            updateProgressIndicators();
+        }
+
+        function updateProgressIndicators() {
+            const container = document.getElementById("task-progress-container");
+
+            if (!container) return;
+
+            let html = "";
+
+            TASKS.forEach(task => {
+                let dotsHTML = "";
+
+                clusters.forEach(cluster => {
+                    const isComplete = checkTaskCompletion(cluster.cluster_ID, task.id);
+
+                    dotsHTML += `
+                        <span class="progress-cluster-dot ${isComplete ? "completed" : ""}"
+                              title="${task.name} - ${cluster.cluster_ID}">
+                        </span>
+                    `;
+                });
+
+                html += `
+                    <div class="progress-task-row">
+                        <div class="progress-task-title">${task.name}</div>
+                        <div class="progress-dot-row">
+                            ${dotsHTML}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+
+            updateDownloadButtonState();
+        }
+
+        function areAllEvaluationsComplete() {
+            if (!TASKS.length || !clusters.length) {
+                return false;
+            }
+
+            return TASKS.every(task => {
+                return clusters.every(cluster => {
+                    return checkTaskCompletion(cluster.cluster_ID, task.id);
+                });
+            });
+        }
+
+        function updateDownloadButtonState() {
+            const downloadBtn = document.getElementById("download-btn");
+
+            if (!downloadBtn) return;
+
+            const isComplete = areAllEvaluationsComplete();
+
+            downloadBtn.disabled = !isComplete;
+
+            if (isComplete) {
+                downloadBtn.title = "All evaluations are complete. You can now download your responses.";
+            } else {
+                downloadBtn.title = "Complete all questions for all clusters and tasks before downloading.";
+            }
+        }
+
+        function openParticipantModal() {
+            if (!areAllEvaluationsComplete()) {
+                return;
+            }
+
+            const modal = document.getElementById("participant-modal");
+            const input = document.getElementById("participant-id-input");
+            const error = document.getElementById("participant-id-error");
+
+            if (error) {
+                error.textContent = "";
+            }
+
+            if (input) {
+                input.value = "";
+            }
+
+            modal.style.display = "flex";
+
+            setTimeout(() => {
+                if (input) input.focus();
+            }, 50);
+        }
+
+        function confirmParticipantDownload(event) {
+            event.preventDefault();
+
+            const input = document.getElementById("participant-id-input");
+            const error = document.getElementById("participant-id-error");
+
+            const participantId = input.value.trim();
+
+            if (!participantId) {
+                error.textContent = "Participant ID is required before downloading.";
+                input.focus();
+                return;
+            }
+
+            error.textContent = "";
+
+            exportDataAsJSON(participantId);
+        }
+
+        function exportDataAsJSON(participantId) {
+            const exportStructure = {
+                exported_at: new Date().toISOString(),
+                participant_id: participantId,
+                system: SYSTEM_NAME,
+                algorithm: ALGORITHM_NAME,
+                tasks: TASKS.map(task => task.name),
+                evaluation_results: clusters.map(cluster => {
+                    const taskEvals = {};
+
+                    TASKS.forEach(task => {
+                        const qEvals = {};
+
+                        task.questions.forEach(question => {
+                            qEvals[question.id] = evaluationAnswers[`${cluster.cluster_ID}_${task.id}_${question.id}`] || "Not Evaluated";
+                        });
+
+                        taskEvals[task.id] = qEvals;
+                    });
+
+                    return {
+                        ...cluster,
+                        task_evaluations: taskEvals
+                    };
+                })
+            };
+
+            const jsonText = JSON.stringify(exportStructure, null, 4);
+            const blob = new Blob([jsonText], { type: "application/json;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+
+            const safeParticipantId = participantId.replace(/[^a-zA-Z0-9_-]/g, "_");
+
+            const downloadAnchor = document.createElement("a");
+            downloadAnchor.href = url;
+            downloadAnchor.download = `${SYSTEM_NAME}_${ALGORITHM_NAME}_${safeParticipantId}_Results.json`;
+
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+                showThankYouPage();
+            }, 300);
+        }
+
+        function showThankYouPage() {
+            document.body.innerHTML = `
+                <div class="thank-you-page">
+                    <div class="thank-you-message">
+                        Thank you for completing this task. Your responses have been saved to the downloaded .json file.
+                        Please upload this file to PANDA along with the <b>Result Sheet</b> once you have completed all other assigned tasks.
+                    </div>
+                </div>
+            `;
+
+            document.body.style.margin = "0";
+            document.body.style.overflow = "hidden";
+            document.documentElement.style.overflow = "hidden";
+        }
+
+        window.onload = initDashboard;
+    </script>
+</body>
+</html>

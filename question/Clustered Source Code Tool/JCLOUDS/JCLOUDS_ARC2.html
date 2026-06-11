@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clustered Source code</title>
+
+<style>
+:root {
+    --primary-clr: #0284c7;
+    --primary-hover: #0369a1;
+
+    --bg-workspace: #f8fafc;
+    --surface-card: #ffffff;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --border-subtle: #e2e8f0;
+
+    --accent-blue: #2563eb;
+    --accent-green: #10b981;
+
+    --radius-md: 8px;
+    --radius-sm: 4px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+html, body {
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    color: var(--text-main);
+    background-color: var(--bg-workspace);
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+a:not(.file-tag) {
+    color: var(--primary-clr);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease, text-decoration 0.2s ease;
+}
+
+a:not(.file-tag):hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
+.top-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 0 24px;
+    background: #fff;
+    height: 60px;
+    flex-shrink: 0;
+    z-index: 10;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    overflow-x: auto;
+}
+
+.nav-branding {
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    white-space: nowrap;
+}
+
+.nav-branding > span {
+    color: var(--primary-clr);
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 18px;
+    white-space: nowrap;
+}
+
+.nav-task-switcher {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 8px;
+}
+
+.nav-task-btn {
+    padding: 8px 12px;
+    border: 1px solid var(--border-subtle);
+    background: #fff;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.nav-task-btn:hover {
+    background-color: var(--bg-workspace);
+    color: var(--text-main);
+}
+
+.nav-task-btn.active {
+    background: var(--primary-clr);
+    color: #fff;
+    border-color: var(--primary-clr);
+}
+
+.app-container {
+    display: flex;
+    flex: 1;
+    height: calc(100vh - 60px);
+    width: 100vw;
+    overflow: hidden;
+}
+
+.left-sidebar {
+    width: 320px;
+    border-right: 1px solid var(--border-subtle);
+    background: #fff;
+    flex-shrink: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-section h3 {
+    font-size: 13px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    letter-spacing: 0.8px;
+    font-weight: 700;
+}
+
+.cluster-nav-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-right: 4px;
+}
+
+.cluster-nav-list::-webkit-scrollbar,
+.center-workspace::-webkit-scrollbar,
+.file-grid-tray::-webkit-scrollbar,
+.source-file-list::-webkit-scrollbar,
+.guidance-dock::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.cluster-nav-list::-webkit-scrollbar-thumb,
+.center-workspace::-webkit-scrollbar-thumb,
+.file-grid-tray::-webkit-scrollbar-thumb,
+.source-file-list::-webkit-scrollbar-thumb,
+.guidance-dock::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 10px;
+}
+
+.algo-group-header {
+    font-size: 16px;
+    color: var(--text-main);
+    font-weight: 700;
+    margin: 0 0 12px 0;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cluster-nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border: 1px solid transparent;
+    background: #fff;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 15px;
+    text-align: left;
+    transition: all 0.2s ease;
+    color: var(--text-muted);
+}
+
+.cluster-nav-btn:hover {
+    background-color: var(--bg-workspace);
+    color: var(--text-main);
+}
+
+.cluster-nav-btn.active {
+    background-color: rgba(2, 132, 199, 0.05);
+    border-color: rgba(2, 132, 199, 0.2);
+    color: var(--primary-clr);
+    font-weight: 600;
+}
+
+.progress-section {
+    padding: 12px 20px 16px 20px;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.progress-task-row {
+    margin-bottom: 14px;
+}
+
+.progress-task-row:last-child {
+    margin-bottom: 0;
+}
+
+.progress-task-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 7px;
+    line-height: 1.35;
+}
+
+.progress-dot-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.progress-cluster-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: var(--border-subtle);
+    transition: background-color 0.3s ease;
+}
+
+.progress-cluster-dot.completed {
+    background-color: var(--accent-green);
+}
+
+.btn-export {
+    background-color: var(--primary-clr);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.2s;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2);
+    flex-shrink: 0;
+    margin: 0 20px 20px 20px;
+}
+
+.btn-export:hover {
+    background-color: var(--primary-hover);
+}
+
+.btn-export:disabled {
+    background-color: #cbd5e1;
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.75;
+}
+
+.btn-export:disabled:hover {
+    background-color: #cbd5e1;
+}
+
+.center-workspace {
+    flex: 1;
+    padding: 24px;
+    overflow-y: scroll;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+}
+
+.cluster-card {
+    background: var(--surface-card);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 900px;
+    flex-shrink: 0;
+    margin-bottom: 40px;
+}
+
+.cluster-header {
+    padding: 18px 24px;
+    background: #fff;
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.cluster-title-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.cluster-id-pill {
+    background: var(--primary-hover);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+}
+
+.cluster-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.section-primary-heading {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.section-primary-heading svg {
+    color: var(--primary-clr);
+    flex-shrink: 0;
+}
+
+.accordion-primary-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.accordion-primary-heading svg {
+    color: var(--primary-clr);
+    flex-shrink: 0;
+}
+
+.cluster-body-stacked {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background: #fff;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.cluster-desc-content {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #2b2d42;
+    background: #fdfdfd;
+    padding: 16px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+}
+
+.file-section-accordion {
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    background: #fff;
+}
+
+.accordion-header {
+    padding: 12px 16px;
+    background: #f8fafc;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 15px;
+    font-weight: 600;
+    user-select: none;
+    transition: background 0.2s;
+}
+
+.accordion-header:hover {
+    background: #f1f5f9;
+}
+
+.accordion-icon {
+    transition: transform 0.2s ease;
+}
+
+.file-section-accordion.open .accordion-icon {
+    transform: rotate(180deg);
+}
+
+.accordion-content {
+    display: none;
+    padding: 16px;
+    border-top: 1px solid var(--border-subtle);
+    background: #fafbfc;
+}
+
+.file-section-accordion.open .accordion-content {
+    display: block;
+}
+
+/* General subsystem/source-code link */
+.source-system-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--accent-blue);
+    background: #ffffff;
+    border: 1px solid var(--border-subtle);
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    word-break: break-all;
+    transition: all 0.2s ease;
+}
+
+.source-system-link:hover {
+    background-color: rgba(2, 62, 138, 0.05);
+    border-color: var(--accent-blue);
+    text-decoration: underline;
+}
+
+.source-file-list {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 8px;
+    max-height: 180px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.source-file-name {
+    background: #fff;
+    border: 1px solid var(--border-subtle);
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    color: var(--text-main);
+    font-family: monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.source-file-empty {
+    grid-column: 1 / -1;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-style: italic;
+}
+
+.cluster-evaluation-bar {
+    background: #fafbfc;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+}
+
+.scenario-box {
+    background-color: rgba(2, 62, 138, 0.04);
+    border-left: 3px solid var(--accent-blue);
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.scenario-box p {
+    font-size: 15px;
+    color: var(--text-main);
+    line-height: 1.5;
+    margin-top: 4px;
+}
+
+.eval-questions {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.question-item {
+    background: #fff;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 16px;
+}
+
+.question-text {
+    font-size: 15px;
+    font-weight: 500;
+    margin-bottom: 12px;
+    color: #333;
+}
+
+.question-text h3 {
+    font-size: 15px;
+    color: var(--primary-clr);
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 4px;
+}
+
+.rating-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.rating-btn-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--border-subtle);
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    cursor: pointer;
+    background: #fff;
+    transition: all 0.15s ease;
+}
+
+.rating-btn-label:hover {
+    background-color: var(--bg-workspace);
+    border-color: var(--text-muted);
+}
+
+.rating-btn-label.selected {
+    background-color: rgba(2, 132, 199, 0.08) !important;
+    border-color: var(--primary-clr);
+    color: var(--primary-clr);
+    font-weight: 600;
+}
+
+.guidance-dock {
+    width: 320px;
+    border-left: 1px solid var(--border-subtle);
+    background: #fff;
+    padding: 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex-shrink: 0;
+    height: 100%;
+}
+
+.dock-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--primary-clr);
+    border-bottom: 2px solid rgba(2, 132, 199, 0.1);
+    padding-bottom: 10px;
+}
+
+.dock-header h4 {
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.rubric-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 10px;
+}
+
+.rubric-item {
+    font-size: 15px;
+    line-height: 1.5;
+    background: var(--bg-workspace);
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--primary-clr);
+}
+
+.rubric-score {
+    font-weight: 700;
+    color: var(--text-main);
+    display: block;
+    margin-bottom: 4px;
+    font-size: 16px;
+}
+
+.empty-state {
+    color: var(--text-muted);
+    font-size: 16px;
+    text-align: center;
+    margin-top: 100px;
+}
+
+.error-state {
+    color: #b91c1c;
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    padding: 16px;
+    border-radius: var(--radius-md);
+    max-width: 800px;
+    line-height: 1.5;
+}
+
+/* Participant ID Modal */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.modal-box {
+    width: 100%;
+    max-width: 420px;
+    background: #ffffff;
+    border-radius: var(--radius-md);
+    padding: 24px;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+    border: 1px solid var(--border-subtle);
+}
+
+.modal-box h3 {
+    font-size: 20px;
+    color: var(--text-main);
+    margin-bottom: 14px;
+}
+
+.participant-id-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    outline: none;
+    margin-bottom: 8px;
+}
+
+.participant-id-input:focus {
+    border-color: var(--primary-clr);
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+}
+
+.participant-help-text {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.4;
+    margin-bottom: 10px;
+}
+
+.participant-error {
+    min-height: 18px;
+    font-size: 13px;
+    color: #b91c1c;
+    margin-bottom: 12px;
+}
+
+.modal-download-btn {
+    width: 100%;
+    background-color: var(--primary-clr);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.modal-download-btn:hover {
+    background-color: var(--primary-hover);
+}
+
+.thank-you-page {
+    min-height: 100vh;
+    width: 100vw;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    color: var(--text-main);
+}
+
+.thank-you-message {
+    max-width: 760px;
+    font-size: 20px;
+    line-height: 1.7;
+    text-align: center;
+    color: var(--text-main);
+}
+</style>
+</head>
+
+<body>
+<header class="top-nav">
+    <div class="nav-branding">
+        <span id="system_name"></span>
+        <div id="task-nav-container" class="nav-task-switcher"></div>
+    </div>
+</header>
+
+<div class="app-container">
+    <aside class="left-sidebar">
+        <div class="sidebar-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 20px;">
+            <div class="algo-group-header">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="9" y1="3" x2="9" y2="21"></line>
+                </svg>
+                <span id="algo-title-sidebar">Clusters</span>
+            </div>
+
+            <div class="cluster-nav-list" id="cluster-list-container"></div>
+        </div>
+
+        <div class="sidebar-section progress-section">
+            <h3 style="margin-bottom: 8px;">Progress</h3>
+            <div id="task-progress-container"></div>
+        </div>
+
+        <button class="btn-export" id="download-btn" onclick="openParticipantModal()" disabled>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Download (.JSON)
+        </button>
+    </aside>
+
+    <section class="center-workspace" id="workspace-container">
+        <div class="empty-state">Loading data...</div>
+    </section>
+
+    <aside class="guidance-dock">
+        <div class="dock-header">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <h4>Relevancy Rating</h4>
+        </div>
+
+        <div class="sidebar-section">
+            <h3>Likert scale</h3>
+
+            <div class="rubric-list">
+                <div class="rubric-item" style="border-left-color: #42a5f5;">
+                    <span class="rubric-score">Very relevant (5)</span>
+                    The cluster title and description contains sufficient information to answer the entire question.
+                </div>
+
+                <div class="rubric-item" style="border-left-color: #64b5f6;">
+                    <span class="rubric-score">Relevant (4)</span>
+                    The cluster's title and description contains information to answer part of the question.
+                </div>
+
+                <div class="rubric-item" style="border-left-color: #90caf9;">
+                    <span class="rubric-score">Distantly relevant (3)</span>
+                    The cluster's title and description does not contain information to answer the question, but the content relates vaguely to it.
+                </div>
+
+                <div class="rubric-item" style="border-left-color: #bbdefb;">
+                    <span class="rubric-score">Less relevant (2)</span>
+                    The cluster's title and description does not contain information to answer the question, but some entities relate to it.
+                </div>
+
+                <div class="rubric-item" style="border-left-color: #e3f2fd;">
+                    <span class="rubric-score">Not relevant (1)</span>
+                    The cluster's title and description has no relation to the question.
+                </div>
+            </div>
+        </div>
+    </aside>
+</div>
+
+<div class="modal-overlay" id="participant-modal" style="display: none;">
+    <div class="modal-box">
+        <h3>Participant ID Required</h3>
+
+        <form onsubmit="confirmParticipantDownload(event)">
+            <input
+                type="text"
+                id="participant-id-input"
+                class="participant-id-input"
+                placeholder="e.g., G10M7"
+                autocomplete="off"
+            >
+
+            <div class="participant-help-text">
+                Please enter your provided participant ID to download the file.
+            </div>
+
+            <div class="participant-error" id="participant-id-error"></div>
+
+            <button type="submit" class="modal-download-btn">
+                Download
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+const SYSTEM_NAME = "JCLOUDS";
+const ALGORITHM_NAME = "ARC";
+
+/*
+    These placeholders will be replaced by build_final_html.py.
+    Do not edit them manually.
+*/
+const TASKS = [
+    {
+        "id": "task1",
+        "name": "Task 1: Support Microsoft Azure blob store",
+        "scenario": "JCloud is a Java library that supports working with different cloud providers, specially compute services and blob stores. One provider is Microsoft Azure. JClouds supports dealing with the blob store of Microsoft Azure. Your task is to explore architectural design decisions related to this functionality.",
+        "questions": [
+            {
+                "id": "q1",
+                "text": "<h3>Existence</h3><b>Question 1:</b> What are the architectural components and connectors in Apache JCloud that supports Microsoft Azure blob store?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q1</u>: Briefly <u>name and describe each component</u>, determine their <u>type (physical or logical)</u>, determine <u>how they are connected</u>, and <u>how they achieve the requirements</u>."
+            },
+            {
+                "id": "q2",
+                "text": "<h3>Property</h3><b>Question 2:</b> What solutions (e.g., patterns or tactics) are implemented to support quality attributes in Apache JCloud to support Microsoft Azure blob store?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q2</u>: Mention the considered <u>quality attributes</u> and <u>describe the solutions</u> applied, and <u>how they achieve the requirements</u>."
+            },
+            {
+                "id": "q3",
+                "text": "<h3>Executive</h3><b>Question 3:</b> Which tools and technologies are integrated to handle Apache JCloud to support Microsoft Azure blob store?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q3</u>: Mention the technologies and tools, their associated <u>components</u>, <u>rationale</u>, and <u>how they achieve the requirements</u>."
+            }
+        ]
+    },
+    {
+        "id": "task2",
+        "name": "Task 2: Support of Portability among providers",
+        "scenario": "JCloud is a Java library that supports working with different cloud providers to store data in the cloud, specially compute services and blob stores. Microsoft Azure blob is One provider from many that are supported. JClouds supports the portability quality attribute, such that developers could change providers without significant changes in their code. Your task is to explore architectural design decisions related to portability.",
+        "questions": [
+            {
+                "id": "q1",
+                "text": "<h3>Existence</h3><b>Question 1:</b> What are the architectural components and connectors in Apache JCloud that supports portability of JCloud for different storage providers including Microsoft Azure blob?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q1</u>: Briefly <u>name and describe each component</u>, determine their <u>type (physical or logical)</u>, determine <u>how they are connected</u>, and <u>how they achieve the requirements</u>."
+            },
+            {
+                "id": "q2",
+                "text": "<h3>Property</h3><b>Question 2:</b> What solutions (e.g., patterns or tactics) are implemented to support the portability quality attribute in Apache JCloud beyond Microsoft Azure blob store?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q2</u>: Mention the considered <u>quality attributes</u> and <u>describe the solutions</u> applied, and <u>how they achieve the requirements</u>."
+            },
+            {
+                "id": "q3",
+                "text": "<h3>Executive</h3><b>Question 3:</b> Which tools and technologies are integrated to handle Apache JCloud to support portability among different storage providers?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q3</u>: Mention the technologies and tools, their associated <u>components</u>, <u>rationale</u>, and <u>how they achieve the requirements</u>."
+            }
+        ]
+    }
+];
+const clusters = [
+    {
+        "cluster_ID": "1",
+        "title": "Azure Blob Core Domain and Provider Metadata",
+        "description": "This cluster groups core domain implementations and provider metadata. Components include AzureBlobProviderMetadata, MutableContainerPropertiesWithMetadata, AzureBlob, XML result handlers, and internal domain implementations. They interact through shared domain interfaces and the JClouds provider registration system. Quality attributes include maintainability through clear domain modeling and extensibility through interface-based design. Technologies used include Java, JClouds BlobStore API, and Azure Blob Storage domain concepts.",
+        "source_code": {
+            "label": "src/main/java/org/jclouds/azureblob",
+            "url": "https://github.com/apache/jclouds/tree/master/providers/azureblob/src/main/java/org/jclouds/azureblob",
+            "files": [
+                "AzureBlobProviderMetadata.java",
+                "MutableContainerPropertiesWithMetadata.java",
+                "AzureBlob.java",
+                "AccountNameEnumerationResultsHandler.java",
+                "ContainerNameEnumerationResultsHandler.java",
+                "ContainerPropertiesImpl.java",
+                "AzureBlobImpl.java",
+                "MutableContainerPropertiesWithMetadataImpl.java",
+                "BlobPropertiesImpl.java",
+                "MutableBlobPropertiesImpl.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "2",
+        "title": "Azure Blob Input Validation Layer",
+        "description": "This cluster contains two validation components: ContainerNameValidator and BlockIdValidator. They validate Azure Blob container names and block IDs respectively, enforcing Azure naming constraints. Both extend the JClouds Validator framework and are injected as parameter validators into API methods. Quality attributes include reliability and security through input validation. Technologies used include Java, JClouds predicates framework, and Azure Blob Storage naming conventions.",
+        "source_code": {
+            "label": "src/main/java/org/jclouds/azureblob",
+            "url": "https://github.com/apache/jclouds/tree/master/providers/azureblob/src/main/java/org/jclouds/azureblob",
+            "files": [
+                "ContainerNameValidator.java",
+                "BlockIdValidator.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "3",
+        "title": "Azure Blob Request Binding and Conversion Layer",
+        "description": "This cluster groups request binders and conversion functions. Binders attach metadata, content metadata, public access settings, and copy options to outgoing HTTP requests. Conversion functions like BlobToAzureBlob, AzureBlobToBlob, and BlobPropertiesToBlobMetadata translate between Azure and generic JClouds representations. Components interact through shared domain objects. Quality attributes include maintainability and extensibility. Technologies used include Java, JClouds REST framework, and Azure Blob Storage REST API.",
+        "source_code": {
+            "label": "src/main/java/org/jclouds/azureblob",
+            "url": "https://github.com/apache/jclouds/tree/master/providers/azureblob/src/main/java/org/jclouds/azureblob",
+            "files": [
+                "BindAzureContentMetadataToRequest.java",
+                "BindAzureBlobMetadataToMultipartRequest.java",
+                "BindPublicAccessToRequest.java",
+                "BindAzureBlobMetadataToRequest.java",
+                "ParseBlobPropertiesFromHeaders.java",
+                "ParseBlobFromHeadersAndHttpContent.java",
+                "ParseContainerPropertiesFromHeaders.java",
+                "BlobPropertiesToBlobMetadata.java",
+                "AzureBlobToBlob.java",
+                "BlobMetadataToBlobProperties.java",
+                "BlobToAzureBlob.java",
+                "ContainerToResourceMetadata.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "4",
+        "title": "Azure Blob Listing Options Layer",
+        "description": "This cluster contains listing-related option components. ListBlobsOptions encapsulates parameters for blob listing operations, while ListOptionsToListBlobsOptions converts generic JClouds listing options to Azure-specific ones. They interact through the JClouds options framework. Quality attributes include usability and maintainability through clean option encapsulation. Technologies used include Java, JClouds BlobStore options API, and Azure Blob Storage REST API.",
+        "source_code": {
+            "label": "src/main/java/org/jclouds/azureblob",
+            "url": "https://github.com/apache/jclouds/tree/master/providers/azureblob/src/main/java/org/jclouds/azureblob",
+            "files": [
+                "ListBlobsOptions.java",
+                "ListOptionsToListBlobsOptions.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "5",
+        "title": "Azure Blob Core API and Configuration Layer",
+        "description": "This cluster contains the core API and configuration components. AzureBlobClient defines all blob storage REST operations. AzureBlobStore implements the BlobStore interface. AzureBlobHttpApiModule and AzureBlobModule configure the API runtime. AzureBlobStoreContextModule and AzureBlobRequestSigner handle blobstore context and request signing. Quality attributes include reliability, security, and maintainability. Technologies used include Java, JClouds framework, Google Guice, and Azure Blob Storage REST API.",
+        "source_code": {
+            "label": "src/main/java/org/jclouds/azureblob",
+            "url": "https://github.com/apache/jclouds/tree/master/providers/azureblob/src/main/java/org/jclouds/azureblob",
+            "files": [
+                "AzureBlobClient.java",
+                "AzureBlobApiMetadata.java",
+                "AzureBlobRequestSigner.java",
+                "AzureBlobStore.java",
+                "AzureBlobHttpApiModule.java",
+                "AzureBlobModule.java",
+                "AzureBlobStoreContextModule.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "6",
+        "title": "Azure Blob Block Operations Layer",
+        "description": "This cluster groups block blob operation components. BindAzureBlocksToRequest binds block data to requests, BlobBlocksResultsHandler parses XML block listing responses, while BlobBlockPropertiesImpl and ListBlobBlocksResponseImpl provide block property implementations. They interact through shared block domain interfaces. Quality attributes include reliability and maintainability. Technologies used include Java, JClouds framework, SAX XML parsing, and Azure Block Blob REST API.",
+        "source_code": {
+            "label": "src/main/java/org/jclouds/azureblob",
+            "url": "https://github.com/apache/jclouds/tree/master/providers/azureblob/src/main/java/org/jclouds/azureblob",
+            "files": [
+                "BindAzureBlocksToRequest.java",
+                "BlobBlocksResultsHandler.java",
+                "BlobBlockPropertiesImpl.java",
+                "ListBlobBlocksResponseImpl.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "7",
+        "title": "Azure Blob Error Handling and Fallback Layer",
+        "description": "This cluster contains error handling components. AzureBlobFallbacks provides fallback logic for common error scenarios like container already exists. ParseAzureBlobErrorFromXmlContent parses Azure XML error responses into JClouds exceptions. They interact through the JClouds HTTP error handling framework. Quality attributes include reliability through comprehensive error handling. Technologies used include Java, JClouds framework, SAX XML parsing, and Azure Storage error response format.",
+        "source_code": {
+            "label": "src/main/java/org/jclouds/azureblob",
+            "url": "https://github.com/apache/jclouds/tree/master/providers/azureblob/src/main/java/org/jclouds/azureblob",
+            "files": [
+                "AzureBlobFallbacks.java",
+                "ParseAzureBlobErrorFromXmlContent.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "8",
+        "title": "Azure Blob Copy Operations Layer",
+        "description": "This cluster contains copy operation components. CopyBlobOptions encapsulates parameters for blob copy operations, while BindAzureCopyOptionsToRequest binds these options to outgoing HTTP requests. They interact through shared option objects. Quality attributes include usability and maintainability. Technologies used include Java, JClouds REST framework, and Azure Blob Storage copy operation REST API.",
+        "source_code": {
+            "label": "src/main/java/org/jclouds/azureblob",
+            "url": "https://github.com/apache/jclouds/tree/master/providers/azureblob/src/main/java/org/jclouds/azureblob",
+            "files": [
+                "CopyBlobOptions.java",
+                "BindAzureCopyOptionsToRequest.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "9",
+        "title": "Azure Blob Domain Properties and Enumerations",
+        "description": "This cluster groups domain property and enumeration classes. It includes enumerations like LeaseStatus, BlobType, ListBlobsInclude, and PublicAccess, along with property interfaces like BlobProperties and BlobBlockProperties. AppendAccountToEndpointModule and InsufficientAccessRightsException provide configuration and exception handling. Quality attributes include maintainability and extensibility. Technologies used include Java, JClouds domain API, and Azure Blob Storage concepts.",
+        "source_code": {
+            "label": "src/main/java/org/jclouds/azureblob",
+            "url": "https://github.com/apache/jclouds/tree/master/providers/azureblob/src/main/java/org/jclouds/azureblob",
+            "files": [
+                "LeaseStatus.java",
+                "BlobType.java",
+                "ContainerProperties.java",
+                "ListBlobsInclude.java",
+                "BlobProperties.java",
+                "BlobBlockProperties.java",
+                "ListBlobBlocksResponse.java",
+                "AppendAccountToEndpointModule.java",
+                "InsufficientAccessRightsException.java",
+                "BlobName.java",
+                "ParsePublicAccessHeader.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "10",
+        "title": "Azure Blob Access Control and Container Options",
+        "description": "This cluster contains access control and container creation components. PublicAccess is an enum defining public access levels for containers, while CreateContainerOptions provides options for container creation. They interact when creating containers with specific access settings. Quality attributes include security through clear access control modeling and usability. Technologies used include Java, JClouds BlobStore API, and Azure Blob Storage container access control.",
+        "source_code": {
+            "label": "src/main/java/org/jclouds/azureblob",
+            "url": "https://github.com/apache/jclouds/tree/master/providers/azureblob/src/main/java/org/jclouds/azureblob",
+            "files": [
+                "PublicAccess.java",
+                "CreateContainerOptions.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "11",
+        "title": "Azure Blob Storage Access Tier Definition",
+        "description": "This cluster contains a single component: AccessTier, an enum defining Azure Blob Storage access tiers including Hot, Cool, and Archive. It is used throughout the domain model to specify storage tier for blobs. Quality attributes include maintainability through enum-based design. Technologies used include Java and Azure Blob Storage access tier concepts.",
+        "source_code": {
+            "label": "src/main/java/org/jclouds/azureblob",
+            "url": "https://github.com/apache/jclouds/tree/master/providers/azureblob/src/main/java/org/jclouds/azureblob",
+            "files": [
+                "AccessTier.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "12",
+        "title": "Azure Blob Listing Response Conversion Layer",
+        "description": "This cluster contains blob listing response conversion components. ListBlobsResponseToResourceList converts Azure blob listing responses into JClouds resource lists, while HashSetListBlobsResponse provides a HashSet-based implementation of the blob listing response interface. They interact through shared domain interfaces. Quality attributes include maintainability and reliability. Technologies used include Java, JClouds BlobStore API, and Azure Blob Storage listing REST API.",
+        "source_code": {
+            "label": "src/main/java/org/jclouds/azureblob",
+            "url": "https://github.com/apache/jclouds/tree/master/providers/azureblob/src/main/java/org/jclouds/azureblob",
+            "files": [
+                "ListBlobsResponseToResourceList.java",
+                "HashSetListBlobsResponse.java"
+            ]
+        }
+    }
+];
+
+document.getElementById("system_name").textContent = "Project: " + SYSTEM_NAME;
+
+let currentActiveTask = TASKS.length > 0 ? TASKS[0].id : null;
+let currentActiveCluster = null;
+let evaluationAnswers = {};
+
+function initDashboard() {
+    renderTopTaskSwitcher();
+    renderSidebar();
+    updateProgressIndicators();
+
+    if (clusters.length > 0) {
+        selectCluster(clusters[0].cluster_ID);
+    } else {
+        document.getElementById("workspace-container").innerHTML = `
+            <div class="empty-state">No clusters found.</div>
+        `;
+    }
+}
+
+function renderTopTaskSwitcher() {
+    const container = document.getElementById("task-nav-container");
+    container.innerHTML = "";
+
+    TASKS.forEach(task => {
+        const btn = document.createElement("button");
+        btn.className = `nav-task-btn ${task.id === currentActiveTask ? "active" : ""}`;
+        btn.innerText = task.name;
+
+        btn.onclick = () => {
+            currentActiveTask = task.id;
+
+            document.querySelectorAll(".nav-task-btn").forEach(b => {
+                b.classList.remove("active");
+            });
+
+            btn.classList.add("active");
+
+            renderSidebar();
+            renderWorkspaceCard();
+            updateProgressIndicators();
+        };
+
+        container.appendChild(btn);
+    });
+}
+
+function renderSidebar() {
+    const container = document.getElementById("cluster-list-container");
+    let html = "";
+
+    clusters.forEach(cluster => {
+        html += `
+            <button class="cluster-nav-btn ${currentActiveCluster === cluster.cluster_ID ? "active" : ""}"
+                    id="nav-${cluster.cluster_ID}"
+                    onclick="selectCluster('${cluster.cluster_ID}')">
+                <span>${cluster.cluster_ID}</span>
+            </button>
+        `;
+    });
+
+    container.innerHTML = html;
+    updateProgressIndicators();
+}
+
+function checkTaskCompletion(clusterId, taskId) {
+    const task = TASKS.find(t => t.id === taskId);
+
+    if (!task) return false;
+
+    return task.questions.every(q => {
+        const uniqueKey = `${clusterId}_${taskId}_${q.id}`;
+        return evaluationAnswers[uniqueKey];
+    });
+}
+
+function selectCluster(clusterId) {
+    currentActiveCluster = clusterId;
+
+    document.querySelectorAll(".cluster-nav-btn").forEach(btn => {
+        btn.classList.remove("active");
+    });
+
+    const activeBtn = document.getElementById(`nav-${clusterId}`);
+
+    if (activeBtn) {
+        activeBtn.classList.add("active");
+    }
+
+    renderWorkspaceCard();
+}
+
+function toggleAccordion(element) {
+    element.parentElement.classList.toggle("open");
+}
+
+function renderWorkspaceCard() {
+    const container = document.getElementById("workspace-container");
+    const cluster = clusters.find(c => c.cluster_ID === currentActiveCluster);
+
+    if (!cluster) {
+        container.innerHTML = `<div class="empty-state">Select a cluster from the sidebar to begin evaluation.</div>`;
+        return;
+    }
+
+    const activeTaskData = TASKS.find(t => t.id === currentActiveTask);
+
+    if (!activeTaskData) {
+        container.innerHTML = `<div class="empty-state">No active task selected.</div>`;
+        return;
+    }
+
+    const rawSourceCode = cluster.source_code || {};
+
+    const sourceCode = {
+        label: rawSourceCode.label || "Source code location",
+        url: rawSourceCode.url || "#",
+        files: Array.isArray(rawSourceCode.files) ? rawSourceCode.files : []
+    };
+
+    let sourceFilesHTML = "";
+
+    if (sourceCode.files.length > 0) {
+        sourceCode.files.forEach(fileName => {
+            sourceFilesHTML += `
+                <div class="source-file-name" title="${fileName}">
+                    ${fileName}
+                </div>
+            `;
+        });
+    } else {
+        sourceFilesHTML = `
+            <div class="source-file-empty">
+                No specific file names provided.
+            </div>
+        `;
+    }
+
+    const sourceCodeHTML = `
+        <a href="${sourceCode.url}" target="_blank" class="source-system-link" title="${sourceCode.url}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+            ${sourceCode.label}
+        </a>
+
+        <div class="source-file-list">
+            ${sourceFilesHTML}
+        </div>
+    `;
+
+    let evalRowsHTML = "";
+
+    activeTaskData.questions.forEach(question => {
+        const uniqueKey = `${cluster.cluster_ID}_${activeTaskData.id}_${question.id}`;
+        const savedValue = evaluationAnswers[uniqueKey] || "";
+        let optionsHTML = "";
+
+        for (let score = 1; score <= 5; score++) {
+            let radioLabel = "";
+            let color = "#";
+
+            switch (score) {
+                case 1:
+                    radioLabel = "Not relevant (1)";
+                    color += "e3f2fd";
+                    break;
+                case 2:
+                    radioLabel = "Less relevant (2)";
+                    color += "bbdefb";
+                    break;
+                case 3:
+                    radioLabel = "Distantly relevant (3)";
+                    color += "90caf9";
+                    break;
+                case 4:
+                    radioLabel = "Relevant (4)";
+                    color += "64b5f6";
+                    break;
+                case 5:
+                    radioLabel = "Very relevant (5)";
+                    color += "42a5f5";
+                    break;
+            }
+
+            const isSelected = savedValue === radioLabel ? "selected" : "";
+
+            optionsHTML += `
+                <label class="rating-btn-label ${isSelected}"
+                       style="background:${color}"
+                       onclick="recordRating('${uniqueKey}', '${radioLabel}', this)">
+                    <input type="radio"
+                           name="${uniqueKey}"
+                           value="${radioLabel}"
+                           style="display:none;"
+                           ${isSelected ? "checked" : ""}>
+                    <span>${radioLabel}</span>
+                </label>
+            `;
+        }
+
+        evalRowsHTML += `
+            <div class="question-item">
+                <div class="question-text">${question.text}</div>
+                <div class="rating-row">${optionsHTML}</div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = `
+        <div class="cluster-card">
+            <div class="cluster-header">
+                <div class="cluster-title-area">
+                    <span class="cluster-id-pill">${cluster.cluster_ID}</span>
+                    <h3 class="cluster-title">${cluster.title}</h3>
+                </div>
+            </div>
+
+            <div class="cluster-body-stacked">
+                <div class="desc-box">
+                    <div class="section-primary-heading">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        Description
+                    </div>
+                    <div class="cluster-desc-content">${cluster.description}</div>
+                </div>
+
+                <div class="file-section-accordion">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                        <div class="accordion-primary-heading">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                            Source Code Location (${sourceCode.files.length} files)
+                        </div>
+
+                        <svg class="accordion-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+
+                    <div class="accordion-content">
+                        ${sourceCodeHTML}
+                    </div>
+                </div>
+            </div>
+
+            <div class="cluster-evaluation-bar">
+                <div class="scenario-box">
+                    <div class="section-primary-heading" style="margin-bottom: 8px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        Task Scenario
+                    </div>
+                    <p>${activeTaskData.scenario}</p>
+                </div>
+
+                <div class="section-primary-heading">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    Task Questions
+                </div>
+
+                <div class="eval-questions">
+                    ${evalRowsHTML}
+                </div>
+            </div>
+        </div>
+    `;
+
+    container.scrollTop = 0;
+}
+
+function recordRating(uniqueKey, radioLabel, element) {
+    evaluationAnswers[uniqueKey] = radioLabel;
+
+    const parentRow = element.parentElement;
+
+    parentRow.querySelectorAll(".rating-btn-label").forEach(label => {
+        label.classList.remove("selected");
+    });
+
+    element.classList.add("selected");
+
+    const input = element.querySelector("input[type='radio']");
+
+    if (input) {
+        input.checked = true;
+    }
+
+    updateProgressIndicators();
+}
+
+
+        function updateProgressIndicators() {
+            const container = document.getElementById("task-progress-container");
+
+            if (!container) return;
+
+            let html = "";
+
+            TASKS.forEach(task => {
+                let dotsHTML = "";
+
+                clusters.forEach(cluster => {
+                    const isComplete = checkTaskCompletion(cluster.cluster_ID, task.id);
+
+                    dotsHTML += `
+                        <span class="progress-cluster-dot ${isComplete ? "completed" : ""}"
+                              title="${task.name} - ${cluster.cluster_ID}">
+                        </span>
+                    `;
+                });
+
+                html += `
+                    <div class="progress-task-row">
+                        <div class="progress-task-title">${task.name}</div>
+                        <div class="progress-dot-row">
+                            ${dotsHTML}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+
+            updateDownloadButtonState();
+        }
+
+        function areAllEvaluationsComplete() {
+            if (!TASKS.length || !clusters.length) {
+                return false;
+            }
+
+            return TASKS.every(task => {
+                return clusters.every(cluster => {
+                    return checkTaskCompletion(cluster.cluster_ID, task.id);
+                });
+            });
+        }
+
+        function updateDownloadButtonState() {
+            const downloadBtn = document.getElementById("download-btn");
+
+            if (!downloadBtn) return;
+
+            const isComplete = areAllEvaluationsComplete();
+
+            downloadBtn.disabled = !isComplete;
+
+            if (isComplete) {
+                downloadBtn.title = "All evaluations are complete. You can now download your responses.";
+            } else {
+                downloadBtn.title = "Complete all questions for all clusters and tasks before downloading.";
+            }
+        }
+
+        function openParticipantModal() {
+            if (!areAllEvaluationsComplete()) {
+                return;
+            }
+
+            const modal = document.getElementById("participant-modal");
+            const input = document.getElementById("participant-id-input");
+            const error = document.getElementById("participant-id-error");
+
+            if (error) {
+                error.textContent = "";
+            }
+
+            if (input) {
+                input.value = "";
+            }
+
+            modal.style.display = "flex";
+
+            setTimeout(() => {
+                if (input) input.focus();
+            }, 50);
+        }
+
+        function confirmParticipantDownload(event) {
+            event.preventDefault();
+
+            const input = document.getElementById("participant-id-input");
+            const error = document.getElementById("participant-id-error");
+
+            const participantId = input.value.trim();
+
+            if (!participantId) {
+                error.textContent = "Participant ID is required before downloading.";
+                input.focus();
+                return;
+            }
+
+            error.textContent = "";
+
+            exportDataAsJSON(participantId);
+        }
+
+        function exportDataAsJSON(participantId) {
+            const exportStructure = {
+                exported_at: new Date().toISOString(),
+                participant_id: participantId,
+                system: SYSTEM_NAME,
+                algorithm: ALGORITHM_NAME,
+                tasks: TASKS.map(task => task.name),
+                evaluation_results: clusters.map(cluster => {
+                    const taskEvals = {};
+
+                    TASKS.forEach(task => {
+                        const qEvals = {};
+
+                        task.questions.forEach(question => {
+                            qEvals[question.id] = evaluationAnswers[`${cluster.cluster_ID}_${task.id}_${question.id}`] || "Not Evaluated";
+                        });
+
+                        taskEvals[task.id] = qEvals;
+                    });
+
+                    return {
+                        ...cluster,
+                        task_evaluations: taskEvals
+                    };
+                })
+            };
+
+            const jsonText = JSON.stringify(exportStructure, null, 4);
+            const blob = new Blob([jsonText], { type: "application/json;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+
+            const safeParticipantId = participantId.replace(/[^a-zA-Z0-9_-]/g, "_");
+
+            const downloadAnchor = document.createElement("a");
+            downloadAnchor.href = url;
+            downloadAnchor.download = `${SYSTEM_NAME}_${ALGORITHM_NAME}_${safeParticipantId}_Results.json`;
+
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+                showThankYouPage();
+            }, 300);
+        }
+
+        function showThankYouPage() {
+            document.body.innerHTML = `
+                <div class="thank-you-page">
+                    <div class="thank-you-message">
+                        Thank you for completing this task. Your responses have been saved to the downloaded .json file.
+                        Please upload this file to PANDA along with the <b>Result Sheet</b> once you have completed all other assigned tasks.
+                    </div>
+                </div>
+            `;
+
+            document.body.style.margin = "0";
+            document.body.style.overflow = "hidden";
+            document.documentElement.style.overflow = "hidden";
+        }
+
+        window.onload = initDashboard;
+    </script>
+</body>
+</html>

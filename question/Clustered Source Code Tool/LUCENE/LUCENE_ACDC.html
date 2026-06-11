@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clustered Source code</title>
+
+    <style>
+        :root {
+            --primary-clr: #0284c7;
+            --primary-hover: #0369a1;
+
+            --bg-workspace: #f8fafc;
+            --surface-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-subtle: #e2e8f0;
+
+            --accent-blue: #2563eb;
+            --accent-green: #10b981;
+
+            --radius-md: 8px;
+            --radius-sm: 4px;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        html, body {
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            color: var(--text-main);
+            background-color: var(--bg-workspace);
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        a:not(.file-tag) {
+            color: var(--primary-clr);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease, text-decoration 0.2s ease;
+        }
+
+        a:not(.file-tag):hover {
+            color: var(--primary-hover);
+            text-decoration: underline;
+        }
+
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0 24px;
+            background: #fff;
+            height: 60px;
+            flex-shrink: 0;
+            z-index: 10;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            overflow-x: auto;
+        }
+
+        .nav-branding {
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            white-space: nowrap;
+        }
+
+        .nav-branding > span {
+            color: var(--primary-clr);
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            font-size: 18px;
+            white-space: nowrap;
+        }
+
+        .nav-task-switcher {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 8px;
+        }
+
+        .nav-task-btn {
+            padding: 8px 12px;
+            border: 1px solid var(--border-subtle);
+            background: #fff;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .nav-task-btn:hover {
+            background-color: var(--bg-workspace);
+            color: var(--text-main);
+        }
+
+        .nav-task-btn.active {
+            background: var(--primary-clr);
+            color: #fff;
+            border-color: var(--primary-clr);
+        }
+
+        .app-container {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 60px);
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        .left-sidebar {
+            width: 320px;
+            border-right: 1px solid var(--border-subtle);
+            background: #fff;
+            flex-shrink: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-section h3 {
+            font-size: 13px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            letter-spacing: 0.8px;
+            font-weight: 700;
+        }
+
+        .cluster-nav-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding-right: 4px;
+        }
+
+        .cluster-nav-list::-webkit-scrollbar,
+        .center-workspace::-webkit-scrollbar,
+        .file-grid-tray::-webkit-scrollbar,
+        .guidance-dock::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .cluster-nav-list::-webkit-scrollbar-thumb,
+        .center-workspace::-webkit-scrollbar-thumb,
+        .file-grid-tray::-webkit-scrollbar-thumb,
+        .guidance-dock::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .algo-group-header {
+            font-size: 16px;
+            color: var(--text-main);
+            font-weight: 700;
+            margin: 0 0 12px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .cluster-nav-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border: 1px solid transparent;
+            background: #fff;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 15px;
+            text-align: left;
+            transition: all 0.2s ease;
+            color: var(--text-muted);
+        }
+
+        .cluster-nav-btn:hover {
+            background-color: var(--bg-workspace);
+            color: var(--text-main);
+        }
+
+        .cluster-nav-btn.active {
+            background-color: rgba(2, 132, 199, 0.05);
+            border-color: rgba(2, 132, 199, 0.2);
+            color: var(--primary-clr);
+            font-weight: 600;
+        }
+
+        .progress-section {
+            padding: 12px 20px 16px 20px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .progress-task-row {
+            margin-bottom: 14px;
+        }
+
+        .progress-task-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .progress-task-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 7px;
+            line-height: 1.35;
+        }
+
+        .progress-dot-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .progress-cluster-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--border-subtle);
+            transition: background-color 0.3s ease;
+        }
+
+        .progress-cluster-dot.completed {
+            background-color: var(--accent-green);
+        }
+
+        .btn-export {
+            background-color: var(--primary-clr);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.2s;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2);
+            flex-shrink: 0;
+            margin: 0 20px 20px 20px;
+        }
+
+        .btn-export:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .center-workspace {
+            flex: 1;
+            padding: 24px;
+            overflow-y: scroll;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+        }
+
+        .cluster-card {
+            background: var(--surface-card);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 900px;
+            flex-shrink: 0;
+            margin-bottom: 40px;
+        }
+
+        .cluster-header {
+            padding: 18px 24px;
+            background: #fff;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .cluster-title-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .cluster-id-pill {
+            background: var(--primary-hover);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+        }
+
+        .cluster-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .section-primary-heading {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: none;
+            letter-spacing: normal;
+        }
+
+        .section-primary-heading svg {
+            color: var(--primary-clr);
+            flex-shrink: 0;
+        }
+
+        .accordion-primary-heading {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .accordion-primary-heading svg {
+            color: var(--primary-clr);
+            flex-shrink: 0;
+        }
+
+        .cluster-body-stacked {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: #fff;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .cluster-desc-content {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #2b2d42;
+            background: #fdfdfd;
+            padding: 16px;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+        }
+
+        .file-section-accordion {
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            background: #fff;
+        }
+
+        .accordion-header {
+            padding: 12px 16px;
+            background: #f8fafc;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 15px;
+            font-weight: 600;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .accordion-header:hover {
+            background: #f1f5f9;
+        }
+
+        .accordion-icon {
+            transition: transform 0.2s ease;
+        }
+
+        .file-section-accordion.open .accordion-icon {
+            transform: rotate(180deg);
+        }
+
+        .accordion-content {
+            display: none;
+            padding: 16px;
+            border-top: 1px solid var(--border-subtle);
+            background: #fafbfc;
+        }
+
+        .file-section-accordion.open .accordion-content {
+            display: block;
+        }
+
+        .file-grid-tray {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 8px;
+            max-height: 180px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        a.file-tag {
+            background: #fff;
+            border: 1px solid var(--border-subtle);
+            padding: 8px 10px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            color: var(--accent-blue);
+            font-family: monospace;
+            text-decoration: none;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        a.file-tag:hover {
+            background-color: rgba(2, 62, 138, 0.05);
+            border-color: var(--accent-blue);
+            white-space: normal;
+            word-break: break-all;
+        }
+
+        a.file-tag svg {
+            flex-shrink: 0;
+        }
+
+        .cluster-evaluation-bar {
+            background: #fafbfc;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .scenario-box {
+            background-color: rgba(2, 62, 138, 0.04);
+            border-left: 3px solid var(--accent-blue);
+            padding: 14px 18px;
+            margin-bottom: 24px;
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+        }
+
+        .scenario-box p {
+            font-size: 15px;
+            color: var(--text-main);
+            line-height: 1.5;
+            margin-top: 4px;
+        }
+
+        .eval-questions {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .question-item {
+            background: #fff;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 16px;
+        }
+
+        .question-text {
+            font-size: 15px;
+            font-weight: 500;
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        .question-text h3 {
+            font-size: 15px;
+            color: var(--primary-clr);
+            margin-bottom: 8px;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 4px;
+        }
+
+        .rating-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .rating-btn-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid var(--border-subtle);
+            padding: 8px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            cursor: pointer;
+            background: #fff;
+            transition: all 0.15s ease;
+        }
+
+        .rating-btn-label:hover {
+            background-color: var(--bg-workspace);
+            border-color: var(--text-muted);
+        }
+
+        .rating-btn-label.selected {
+            background-color: rgba(2, 132, 199, 0.08) !important;
+            border-color: var(--primary-clr);
+            color: var(--primary-clr);
+            font-weight: 600;
+        }
+
+        .guidance-dock {
+            width: 320px;
+            border-left: 1px solid var(--border-subtle);
+            background: #fff;
+            padding: 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex-shrink: 0;
+            height: 100%;
+        }
+
+        .dock-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary-clr);
+            border-bottom: 2px solid rgba(2, 132, 199, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .dock-header h4 {
+            font-size: 16px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .rubric-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 10px;
+        }
+
+        .rubric-item {
+            font-size: 15px;
+            line-height: 1.5;
+            background: var(--bg-workspace);
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            border-left: 3px solid var(--primary-clr);
+        }
+
+        .rubric-score {
+            font-weight: 700;
+            color: var(--text-main);
+            display: block;
+            margin-bottom: 4px;
+            font-size: 16px;
+        }
+
+        .empty-state {
+            color: var(--text-muted);
+            font-size: 16px;
+            text-align: center;
+            margin-top: 100px;
+        }
+
+        .error-state {
+            color: #b91c1c;
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            padding: 16px;
+            border-radius: var(--radius-md);
+            max-width: 800px;
+            line-height: 1.5;
+        }
+
+
+        .btn-export:disabled {
+            background-color: #cbd5e1;
+            cursor: not-allowed;
+            box-shadow: none;
+            opacity: 0.75;
+        }
+
+        .btn-export:disabled:hover {
+            background-color: #cbd5e1;
+        }
+
+        /* Participant ID Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .modal-box {
+            width: 100%;
+            max-width: 420px;
+            background: #ffffff;
+            border-radius: var(--radius-md);
+            padding: 24px;
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .modal-box h2 {
+            font-size: 20px;
+            color: var(--text-main);
+            margin-bottom: 10px;
+        }
+
+        .participant-id-input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            font-size: 15px;
+            outline: none;
+            margin-bottom: 8px;
+        }
+
+        .participant-id-input:focus {
+            border-color: var(--primary-clr);
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+        }
+
+        .participant-help-text {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.4;
+            margin-bottom: 10px;
+        }
+
+        .participant-error {
+            min-height: 18px;
+            font-size: 13px;
+            color: #b91c1c;
+            margin-bottom: 12px;
+        }
+
+        .modal-download-btn {
+            width: 100%;
+            background-color: var(--primary-clr);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .modal-download-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .thank-you-page {
+            min-height: 100vh;
+            width: 100vw;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+            color: var(--text-main);
+        }
+
+        .thank-you-message {
+            max-width: 760px;
+            font-size: 20px;
+            line-height: 1.7;
+            text-align: center;
+            color: var(--text-main);
+        }
+
+    </style>
+</head>
+
+<body>
+    <header class="top-nav">
+        <div class="nav-branding">
+            <span id="system_name"></span>
+            <div id="task-nav-container" class="nav-task-switcher"></div>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <aside class="left-sidebar">
+            <div class="sidebar-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 20px;">
+                <div class="algo-group-header">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="9" y1="3" x2="9" y2="21"></line>
+                    </svg>
+                    <span id="algo-title-sidebar">Clusters</span>
+                </div>
+
+                <div class="cluster-nav-list" id="cluster-list-container"></div>
+            </div>
+
+            <div class="sidebar-section progress-section">
+                <h3 style="margin-bottom: 8px;">Progress</h3>
+                <div id="task-progress-container"></div>
+            </div>
+
+            <button class="btn-export" id="download-btn" onclick="openParticipantModal()" disabled>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Download (.JSON)
+            </button>
+        </aside>
+
+        <section class="center-workspace" id="workspace-container">
+            <div class="empty-state">Loading data...</div>
+        </section>
+
+        <aside class="guidance-dock">
+            <div class="dock-header">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                <h4>Relevancy Rating</h4>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>Likert scale</h3>
+
+                <div class="rubric-list">
+                    <div class="rubric-item" style="border-left-color: #42a5f5;">
+                        <span class="rubric-score">Very relevant (5)</span>
+                        The cluster title and description contains sufficient information to answer the entire question.
+                    </div>
+
+                    <div class="rubric-item" style="border-left-color: #64b5f6;">
+                        <span class="rubric-score">Relevant (4)</span>
+                        The cluster's title and description contains information to answer part of the question.
+                    </div>
+
+                    <div class="rubric-item" style="border-left-color: #90caf9;">
+                        <span class="rubric-score">Distantly relevant (3)</span>
+                        The cluster's title and description does not contain information to answer the question, but the content relates vaguely to it.
+                    </div>
+
+                    <div class="rubric-item" style="border-left-color: #bbdefb;">
+                        <span class="rubric-score">Less relevant (2)</span>
+                        The cluster's title and description does not contain information to answer the question, but some entities relate to it.
+                    </div>
+
+                    <div class="rubric-item" style="border-left-color: #e3f2fd;">
+                        <span class="rubric-score">Not relevant (1)</span>
+                        The cluster's title and description has no relation to the question.
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+
+    <div class="modal-overlay" id="participant-modal" style="display: none;">
+        <div class="modal-box">
+            <h3>Participant ID Required</h3>
+
+            <form onsubmit="confirmParticipantDownload(event)">
+                <input
+                    type="text"
+                    id="participant-id-input"
+                    class="participant-id-input"
+                    placeholder="e.g., G10M7"
+                    autocomplete="off"
+                >
+
+                <div class="participant-help-text">
+                    Please enter your provided participant ID to download the file.
+                </div>
+
+                <div class="participant-error" id="participant-id-error"></div>
+
+                <button type="submit" class="modal-download-btn">
+                    Download
+                </button>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        const SYSTEM_NAME = "LUCENE";
+        const ALGORITHM_NAME = "ACDC";
+
+        /*
+            These placeholders will be replaced by build_final_html.py.
+            Do not edit them manually.
+        */
+        const TASKS = [
+    {
+        "id": "task1",
+        "name": "Task 1: Codecs components",
+        "scenario": "As a developer delving into Apache Lucene internals, your task is to understand the design decisions behind the codecs components. You aim to learn its functionality and grasp its inner workings from components, connectors, and architectural solutions.",
+        "questions": [
+            {
+                "id": "q1",
+                "text": "<h3>Existence</h3><b>Question 1:</b> What are the components and connectors of the codecs components?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q1</u>: Briefly <u>name and describe each component</u>, determine their <u>type (physical or logical)</u>, determine <u>how they are connected</u>, and <u>how they achieve the requirements</u> of the codecs components."
+            },
+            {
+                "id": "q2",
+                "text": "<h3>Property</h3><b>Question 2:</b> What quality attribute and quality attribute solutions (e.g., patterns or tactics) are considered in the design of codecs components?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q2</u>: Mention the considered <u>quality attributes</u> and <u>describe the solutions</u> applied, and <u>how they achieve the requirements</u>."
+            },
+            {
+                "id": "q3",
+                "text": "<h3>Executive</h3><b>Question 3:</b> What are the technologies applied in the codecs components, and what is the rationale behind selecting these technologies?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q3</u>: Mention the technologies and tools, their associated <u>components</u>, <u>rationale</u>, and <u>how they achieve the requirements</u>."
+            }
+        ]
+    },
+    {
+        "id": "task2",
+        "name": "Task 2: Requirement Performance by Codecs",
+        "scenario": "Performance and efficiency is a key quality attribute of Apache Lucene to support fast searching. Understanding how codecs contribute to the efficiency of retrieval in Apache Lucene will provide insight into how Apache Lucene supports performance. You are tasked with exploring the architectural decisions in the Codecs components that enable Performance in Apache Lucene.",
+        "questions": [
+            {
+                "id": "q1",
+                "text": "<h3>Existence</h3><b>Question 1:</b> What components and connectors in Apache Lucene Codes component contribute to its Performance?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q1</u>: Briefly <u>name and describe each component</u>, determine their <u>type (physical or logical)</u>, determine <u>how they are connected</u>, and <u>hhow they achieve the performance requirements</u> of the codecs components.."
+            },
+            {
+                "id": "q2",
+                "text": "<h3>Property</h3><b>Question 2:</b> What solutions (e.g., patterns or tactics) are implemented to support the performance quality attribute in Apache Lucene Codes components?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q2</u>: <u>Mention</u> and <u>describe the solutions</u> applied, and <u>describe the solutions</u> applied, and <u>how they achieve the requirements</u>."
+            },
+            {
+                "id": "q3",
+                "text": "<h3>Executive</h3><b>Question 3:</b> Which tools and technologies are integrated into Apache Lucene Codes components to support Performance?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q3</u>: Mention the technologies and tools, their associated <u>components</u>, <u>rationale</u>, and <u>how they achieve the requirements</u>."
+            }
+        ]
+    }
+];
+        const clusters = [
+    {
+        "cluster_ID": "lucene.codecs.blockterms.ss",
+        "title": "Apache Lucene Terms Indexing Components",
+        "description": "The Apache Lucene cluster contains several components responsible for handling terms indexing, including BlockTermsReader, BlockTermsWriter, FixedGapTermsIndexReader, FixedGapTermsIndexWriter, TermsIndexReaderBase, and TermsIndexWriterBase. BlockTermsReader is responsible for reading terms dictionaries, while BlockTermsWriter writes terms using block-encoding. FixedGapTermsIndexReader and FixedGapTermsIndexWriter handle the reading and writing of every Nth terms indexes, respectively. TermsIndexReaderBase and TermsIndexWriterBase provide an interface and base implementation for managing terms indexes. These components interact to provide efficient searching and indexing of text data, with quality attributes including scalability, performance, and maintainability. The technologies used include Java, Apache Lucene framework, and various data structures such as Trees and FSTs.",
+        "files": [
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/blockterms/BlockTermsReader.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/blockterms/FixedGapTermsIndexWriter.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/blockterms/VariableGapTermsIndexWriter.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/blockterms/FixedGapTermsIndexReader.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/blockterms/TermsIndexReaderBase.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/blockterms/TermsIndexWriterBase.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/blockterms/BlockTermsWriter.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/blockterms/VariableGapTermsIndexReader.java"
+            }
+        ]
+    },
+    {
+        "cluster_ID": "lucene.codecs.bloom.ss",
+        "title": "Efficient Indexing and Retrieval with BlockTreeOrdsPostingsFormat Cluster",
+        "description": "The BlockTreeOrdsPostingsFormat cluster is a postings format for Apache Lucene that utilizes OrdsBlockTreeTermsWriter and Lucene90PostingsWriter to ensure efficient indexing and retrieval of terms and their associated postings lists. This cluster consists of two main components: BlockTreeOrdsPostingsFormat and OrdsBlockTreeTermsWriter. BlockTreeOrdsPostingsFormat has two constructors, one with default settings and another with custom minBlockSize and maxBlockSize. It overrides fieldsConsumer and fieldsProducer methods to create instances of OrdsBlockTreeTermsWriter and OrdsBlockTreeTermsReader, respectively, using the provided settings and postings writers/readers. The OrdsBlockTreeTermsWriter component is responsible for writing terms and postings lists to the index. Components and Interactions: BlockTreeOrdsPostingsFormat interacts with OrdsBlockTreeTermsWriter to manage terms and postings lists. Quality Attributes: This architecture achieves scalability by efficiently handling large volumes of terms and postings lists. It also enhances maintainability through the separation of core logic between BlockTreeOrdsPostingsFormat and OrdsBlockTreeTermsWriter. Technology Used: The cluster relies on Apache Lucene's framework, specifically OrdsBlockTreeTermsWriter, Lucene90PostingsWriter, Lucene90PostingsReader, and Lucene90BlockTreeTermsWriter. It also uses IOUtils for handling exceptions during resource closing.",
+        "files": [
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/bloom/BloomFilterFactory.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/bloom/FSTPostingsFormat.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/blocktreeords/BlockTreeOrdsPostingsFormat.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/bloom/HashFunction.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/bloom/FuzzySet.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/bloom/DefaultBloomFilterFactory.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/bloom/BloomFilteringPostingsFormat.java"
+            }
+        ]
+    },
+    {
+        "cluster_ID": "lucene.codecs.blocktreeords.ss",
+        "title": "Apache Lucene Block-Oriented ORD Indexing Architecture",
+        "description": "This cluster within Apache Lucene implements a block-oriented ORD (ordinal) indexing architecture. The components include OrdsBlockTreeTermsWriter, OrdsBlockTreeTermsReader, OrdsFieldReader, OrdsIntersectTermsEnum, OrdsIntersectTermsEnumFrame, and OrdsSegmentTermsEnum. OrdsBlockTreeTermsWriter writes terms to a Lucene index in a block-oriented fashion, storing a version per term and adding a method to its TermsEnum implementation to seekExact only if the version is >= the specified version. OrdsBlockTreeTermsReader reads terms dictionary for a given field, gathering state to produce DocsEnum on demand. OrdsFieldReader provides term dictionary functionality, such as accessing terms, frequencies, and document metadata. OrdsIntersectTermsEnum intersects terms using a FST (Finite State Transducer) and outputs the resulting terms. OrdsIntersectTermsEnumFrame handles the logic for reading and decoding terms or sub-blocks within a block of a BlockTree ORDs index. OrdsSegmentTermsEnum iterates through terms in a specific field of a Lucene index. Quality Attributes: This architecture achieves high scalability by storing terms in a block-oriented fashion, reducing the number of index lookups required. Security is ensured through the use of Apache Lucene's standard access control mechanisms. Maintainability is enhanced through the modular design and clear separation of concerns between components. Technology Used: This architecture is built using Java and relies on the Apache Lucene library, which provides indexing, search, and analysis functionality for text. The components utilize Finite State Transducers (FST) for efficient term lookup and Intersection for combining term sets.",
+        "files": [
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/blocktreeords/FSTOrdsOutputs.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/blocktreeords/OrdsBlockTreeTermsWriter.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/blocktreeords/OrdsIntersectTermsEnumFrame.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/blocktreeords/OrdsSegmentTermsEnumFrame.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/blocktreeords/OrdsSegmentTermsEnum.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/blocktreeords/OrdsIntersectTermsEnum.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/blocktreeords/OrdsBlockTreeTermsReader.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/blocktreeords/OrdsFieldReader.java"
+            }
+        ]
+    },
+    {
+        "cluster_ID": "lucene.codecs.memory.ss",
+        "title": "Apache Lucene Memory-based Codecs and FST Terms Reading/Writing",
+        "description": "The provided source code pertains to the `DirectPostingsFormat`, `FSTTermOutputs`, `FSTTermsReader`, and `FSTTermsWriter` components of Apache Lucene's memory-based codecs and FST terms reading/writing. These components work together to provide fast search performance and efficient storage of term metadata in memory using Finite State Transducers (FSTs).<br>1. Components and Interactions:<br>- `DirectPostingsFormat` is a wrapper for `Lucene90PostingsFormat` that sacrifices disk space for RAM usage, storing terms and postings in memory for fast search performance.<br>- `FSTTermOutputs` implements an FST `Outputs` for `FSTTermsWriter`, handling the storage and retrieval of term metadata in a memory-efficient manner.<br>- `FSTTermsReader` uses an FST to map terms to their metadata, providing methods to iterate over terms and retrieve their associated metadata.<br>- `FSTTermsWriter` writes terms data using FST for a cluster of indexed fields, separating metadata into two parts and storing them in a terms dictionary file.<br>These components interact to efficiently read and write terms data in memory, utilizing FSTs for memory-efficient storage and retrieval of term metadata.<br>2. Quality Attributes:<br>- Scalability: The use of FSTs and memory-based codecs allows for efficient handling of large datasets.<br>- Performance: Fast search performance is achieved by storing terms and postings in memory.<br>- Maintainability: Each component has a clear responsibility and dependencies, making it easier to maintain and update.<br>3. Technology Used:<br>- Java: The primary language used for implementation.<br>- Apache Lucene: A full-featured text search library, providing various classes and utilities for working with terms and postings.<br>- Finite State Transducers (FSTs): A data structure used for memory-efficient storage and retrieval of term metadata.",
+        "files": [
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/memory/FSTTermOutputs.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/memory/DirectPostingsFormat.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/memory/FSTTermsWriter.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/memory/FSTTermsReader.java"
+            }
+        ]
+    },
+    {
+        "cluster_ID": "lucene.codecs.simpletext.ss",
+        "title": "Apache Lucene SimpleText Codec Components",
+        "description": "The SimpleTextCodec is an experimental feature in Apache Lucene for serializing index components to plain text format. It includes several components such as SimpleTextBKDReader, SimpleTextBKDWriter, SimpleTextCodec, SimpleTextCompoundFormat, SimpleTextDocValuesFormat, SimpleTextDocValuesWriter, SimpleTextFieldsReader, SimpleTextFieldsWriter, SimpleTextKnnVectorsFormat, SimpleTextKnnVectorsReader, SimpleTextKnnVectorsWriter, SimpleTextLiveDocsFormat, SimpleTextNormsFormat, SimpleTextPointsFormat, SimpleTextPointsReader, SimpleTextPointsWriter, SimpleTextPostingsFormat, SimpleTextSegmentInfoFormat, SimpleTextSkipReader, SimpleTextSkipWriter, SimpleTextStoredFieldsFormat, SimpleTextStoredFieldsReader, SimpleTextStoredFieldsWriter, SimpleTextTermVectorsFormat, SimpleTextTermVectorsReader, and SimpleTextUtil. These components are responsible for reading and writing various index components like field infos, norms, term vectors, stored fields, and skip data in a human-readable text format, primarily for debugging and experimental purposes. The components interact within the cluster by utilizing each other's functionalities to provide a complete text-based indexing solution.<br>Quality Attributes: The SimpleTextCodec components achieve non-functional requirements such as:<br>1. Human-readability: The components store and retrieve index data in a plain text format, making it easy for developers to read and understand the data.<br>2. Debugging: The components enable developers to inspect and modify index data during debugging, as well as validate the integrity of the index.<br>3. Experimentation: The components allow researchers and developers to experiment with new indexing strategies and data structures without having to understand the binary format.<br>Technology Used: The SimpleTextCodec components are built using Apache Lucene libraries and rely on Java standard libraries for basic functionality such as reading and writing bytes, formatting strings, and handling exceptions.",
+        "files": [
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextFieldsWriter.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextBKDReader.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextPointsReader.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextSkipWriter.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextStoredFieldsWriter.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextStoredFieldsReader.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextKnnVectorsWriter.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextLiveDocsFormat.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextTermVectorsReader.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextNormsFormat.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextStoredFieldsFormat.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextPointsWriter.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextCodec.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextSegmentInfoFormat.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextCompoundFormat.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextKnnVectorsFormat.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextTermVectorsWriter.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextDocValuesReader.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextBKDWriter.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextSkipReader.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextPostingsFormat.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextDocValuesWriter.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextTermVectorsFormat.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextKnnVectorsReader.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextUtil.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextFieldInfosFormat.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextFieldsReader.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextPointsFormat.java"
+            },
+            {
+                "path": "https:/github.com/apache/lucene/tree/main/lucene/codecs/src/java/org/apache/lucene/codecs/simpletext/SimpleTextDocValuesFormat.java"
+            }
+        ]
+    }
+];
+
+        document.getElementById("system_name").textContent = "Project: " + SYSTEM_NAME;
+
+        let currentActiveTask = TASKS.length > 0 ? TASKS[0].id : null;
+        let currentActiveCluster = null;
+        let evaluationAnswers = {};
+
+        function initDashboard() {
+            renderTopTaskSwitcher();
+            renderSidebar();
+            updateProgressIndicators();
+
+            if (clusters.length > 0) {
+                selectCluster(clusters[0].cluster_ID);
+            } else {
+                document.getElementById("workspace-container").innerHTML = `
+                    <div class="empty-state">No clusters found.</div>
+                `;
+            }
+        }
+
+        function renderTopTaskSwitcher() {
+            const container = document.getElementById("task-nav-container");
+            container.innerHTML = "";
+
+            TASKS.forEach(task => {
+                const btn = document.createElement("button");
+                btn.className = `nav-task-btn ${task.id === currentActiveTask ? "active" : ""}`;
+                btn.innerText = task.name;
+
+                btn.onclick = () => {
+                    currentActiveTask = task.id;
+
+                    document.querySelectorAll(".nav-task-btn").forEach(b => {
+                        b.classList.remove("active");
+                    });
+
+                    btn.classList.add("active");
+
+                    renderSidebar();
+                    renderWorkspaceCard();
+                    updateProgressIndicators();
+                };
+
+                container.appendChild(btn);
+            });
+        }
+
+        function renderSidebar() {
+            const container = document.getElementById("cluster-list-container");
+            let html = "";
+
+            clusters.forEach(cluster => {
+                html += `
+                    <button class="cluster-nav-btn ${currentActiveCluster === cluster.cluster_ID ? "active" : ""}"
+                            id="nav-${cluster.cluster_ID}"
+                            onclick="selectCluster('${cluster.cluster_ID}')">
+                        <span>${cluster.cluster_ID}</span>
+                    </button>
+                `;
+            });
+
+            container.innerHTML = html;
+            updateProgressIndicators();
+        }
+
+        function checkTaskCompletion(clusterId, taskId) {
+            const task = TASKS.find(t => t.id === taskId);
+
+            if (!task) return false;
+
+            return task.questions.every(q => {
+                const uniqueKey = `${clusterId}_${taskId}_${q.id}`;
+                return evaluationAnswers[uniqueKey];
+            });
+        }
+
+        function selectCluster(clusterId) {
+            currentActiveCluster = clusterId;
+
+            document.querySelectorAll(".cluster-nav-btn").forEach(btn => {
+                btn.classList.remove("active");
+            });
+
+            const activeBtn = document.getElementById(`nav-${clusterId}`);
+
+            if (activeBtn) {
+                activeBtn.classList.add("active");
+            }
+
+            renderWorkspaceCard();
+        }
+
+        function toggleAccordion(element) {
+            element.parentElement.classList.toggle("open");
+        }
+
+        function renderWorkspaceCard() {
+            const container = document.getElementById("workspace-container");
+            const cluster = clusters.find(c => c.cluster_ID === currentActiveCluster);
+
+            if (!cluster) {
+                container.innerHTML = `<div class="empty-state">Select a cluster from the sidebar to begin evaluation.</div>`;
+                return;
+            }
+
+            const activeTaskData = TASKS.find(t => t.id === currentActiveTask);
+
+            if (!activeTaskData) {
+                container.innerHTML = `<div class="empty-state">No active task selected.</div>`;
+                return;
+            }
+
+            let filesHTML = "";
+
+            cluster.files.forEach(file => {
+                filesHTML += `
+                    <a href="${file.path}" target="_blank" class="file-tag" title="${file.path}">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                        ${file.path.split("/").pop()}
+                    </a>
+                `;
+            });
+
+            let evalRowsHTML = "";
+
+            activeTaskData.questions.forEach(question => {
+                const uniqueKey = `${cluster.cluster_ID}_${activeTaskData.id}_${question.id}`;
+                const savedValue = evaluationAnswers[uniqueKey] || "";
+                let optionsHTML = "";
+
+                for (let score = 1; score <= 5; score++) {
+                    let radioLabel = "";
+                    let color = "#";
+
+                    switch (score) {
+                        case 1:
+                            radioLabel = "Not relevant (1)";
+                            color += "e3f2fd";
+                            break;
+                        case 2:
+                            radioLabel = "Less relevant (2)";
+                            color += "bbdefb";
+                            break;
+                        case 3:
+                            radioLabel = "Distantly relevant (3)";
+                            color += "90caf9";
+                            break;
+                        case 4:
+                            radioLabel = "Relevant (4)";
+                            color += "64b5f6";
+                            break;
+                        case 5:
+                            radioLabel = "Very relevant (5)";
+                            color += "42a5f5";
+                            break;
+                    }
+
+                    const isSelected = savedValue === radioLabel ? "selected" : "";
+
+                    optionsHTML += `
+                        <label class="rating-btn-label ${isSelected}"
+                               style="background:${color}"
+                               onclick="recordRating('${uniqueKey}', '${radioLabel}', this)">
+                            <input type="radio"
+                                   name="${uniqueKey}"
+                                   value="${radioLabel}"
+                                   style="display:none;"
+                                   ${isSelected ? "checked" : ""}>
+                            <span>${radioLabel}</span>
+                        </label>
+                    `;
+                }
+
+                evalRowsHTML += `
+                    <div class="question-item">
+                        <div class="question-text">${question.text}</div>
+                        <div class="rating-row">${optionsHTML}</div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = `
+                <div class="cluster-card">
+                    <div class="cluster-header">
+                        <div class="cluster-title-area">
+                            <span class="cluster-id-pill">${cluster.cluster_ID}</span>
+                            <h3 class="cluster-title">${cluster.title}</h3>
+                        </div>
+                    </div>
+
+                    <div class="cluster-body-stacked">
+                        <div class="desc-box">
+                            <div class="section-primary-heading">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                                Description
+                            </div>
+                            <div class="cluster-desc-content">${cluster.description}</div>
+                        </div>
+
+                        <div class="file-section-accordion">
+                            <div class="accordion-header" onclick="toggleAccordion(this)">
+                                <div class="accordion-primary-heading">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                        <polyline points="15 3 21 3 21 9"></polyline>
+                                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                                    </svg>
+                                    Source Code files (${cluster.files.length} files)
+                                </div>
+
+                                <svg class="accordion-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </div>
+
+                            <div class="accordion-content">
+                                <div class="file-grid-tray">${filesHTML}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cluster-evaluation-bar">
+                        <div class="scenario-box">
+                            <div class="section-primary-heading" style="margin-bottom: 8px;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                                Task Scenario
+                            </div>
+                            <p>${activeTaskData.scenario}</p>
+                        </div>
+
+                        <div class="section-primary-heading">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                            Task Questions
+                        </div>
+
+                        <div class="eval-questions">
+                            ${evalRowsHTML}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            container.scrollTop = 0;
+        }
+
+        function recordRating(uniqueKey, radioLabel, element) {
+            evaluationAnswers[uniqueKey] = radioLabel;
+
+            const parentRow = element.parentElement;
+
+            parentRow.querySelectorAll(".rating-btn-label").forEach(label => {
+                label.classList.remove("selected");
+            });
+
+            element.classList.add("selected");
+
+            const input = element.querySelector("input[type='radio']");
+
+            if (input) {
+                input.checked = true;
+            }
+
+            updateProgressIndicators();
+        }
+
+        function updateProgressIndicators() {
+            const container = document.getElementById("task-progress-container");
+
+            if (!container) return;
+
+            let html = "";
+
+            TASKS.forEach(task => {
+                let dotsHTML = "";
+
+                clusters.forEach(cluster => {
+                    const isComplete = checkTaskCompletion(cluster.cluster_ID, task.id);
+
+                    dotsHTML += `
+                        <span class="progress-cluster-dot ${isComplete ? "completed" : ""}"
+                              title="${task.name} - ${cluster.cluster_ID}">
+                        </span>
+                    `;
+                });
+
+                html += `
+                    <div class="progress-task-row">
+                        <div class="progress-task-title">${task.name}</div>
+                        <div class="progress-dot-row">
+                            ${dotsHTML}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+
+            updateDownloadButtonState();
+        }
+
+        function areAllEvaluationsComplete() {
+            if (!TASKS.length || !clusters.length) {
+                return false;
+            }
+
+            return TASKS.every(task => {
+                return clusters.every(cluster => {
+                    return checkTaskCompletion(cluster.cluster_ID, task.id);
+                });
+            });
+        }
+
+        function updateDownloadButtonState() {
+            const downloadBtn = document.getElementById("download-btn");
+
+            if (!downloadBtn) return;
+
+            const isComplete = areAllEvaluationsComplete();
+
+            downloadBtn.disabled = !isComplete;
+
+            if (isComplete) {
+                downloadBtn.title = "All evaluations are complete. You can now download your responses.";
+            } else {
+                downloadBtn.title = "Complete all questions for all clusters and tasks before downloading.";
+            }
+        }
+
+        function openParticipantModal() {
+            if (!areAllEvaluationsComplete()) {
+                return;
+            }
+
+            const modal = document.getElementById("participant-modal");
+            const input = document.getElementById("participant-id-input");
+            const error = document.getElementById("participant-id-error");
+
+            if (error) {
+                error.textContent = "";
+            }
+
+            if (input) {
+                input.value = "";
+            }
+
+            modal.style.display = "flex";
+
+            setTimeout(() => {
+                if (input) input.focus();
+            }, 50);
+        }
+
+        function confirmParticipantDownload(event) {
+            event.preventDefault();
+
+            const input = document.getElementById("participant-id-input");
+            const error = document.getElementById("participant-id-error");
+
+            const participantId = input.value.trim();
+
+            if (!participantId) {
+                error.textContent = "Participant ID is required before downloading.";
+                input.focus();
+                return;
+            }
+
+            error.textContent = "";
+
+            exportDataAsJSON(participantId);
+        }
+
+        function exportDataAsJSON(participantId) {
+            const exportStructure = {
+                exported_at: new Date().toISOString(),
+                participant_id: participantId,
+                system: SYSTEM_NAME,
+                algorithm: ALGORITHM_NAME,
+                tasks: TASKS.map(task => task.name),
+                evaluation_results: clusters.map(cluster => {
+                    const taskEvals = {};
+
+                    TASKS.forEach(task => {
+                        const qEvals = {};
+
+                        task.questions.forEach(question => {
+                            qEvals[question.id] = evaluationAnswers[`${cluster.cluster_ID}_${task.id}_${question.id}`] || "Not Evaluated";
+                        });
+
+                        taskEvals[task.id] = qEvals;
+                    });
+
+                    return {
+                        ...cluster,
+                        task_evaluations: taskEvals
+                    };
+                })
+            };
+
+            const jsonText = JSON.stringify(exportStructure, null, 4);
+            const blob = new Blob([jsonText], { type: "application/json;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+
+            const safeParticipantId = participantId.replace(/[^a-zA-Z0-9_-]/g, "_");
+
+            const downloadAnchor = document.createElement("a");
+            downloadAnchor.href = url;
+            downloadAnchor.download = `${SYSTEM_NAME}_${ALGORITHM_NAME}_${safeParticipantId}_Results.json`;
+
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+                showThankYouPage();
+            }, 300);
+        }
+
+        function showThankYouPage() {
+            document.body.innerHTML = `
+                <div class="thank-you-page">
+                    <div class="thank-you-message">
+                        Thank you for completing this task. Your responses have been saved to the downloaded .json file.
+                        Please upload this file to PANDA along with the <b>Result Sheet</b> once you have completed all other assigned tasks.
+                    </div>
+                </div>
+            `;
+
+            document.body.style.margin = "0";
+            document.body.style.overflow = "hidden";
+            document.documentElement.style.overflow = "hidden";
+        }
+
+        window.onload = initDashboard;
+    </script>
+</body>
+</html>

@@ -1,0 +1,1941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clustered Source code</title>
+
+<style>
+:root {
+    --primary-clr: #0284c7;
+    --primary-hover: #0369a1;
+
+    --bg-workspace: #f8fafc;
+    --surface-card: #ffffff;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --border-subtle: #e2e8f0;
+
+    --accent-blue: #2563eb;
+    --accent-green: #10b981;
+
+    --radius-md: 8px;
+    --radius-sm: 4px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+html, body {
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    color: var(--text-main);
+    background-color: var(--bg-workspace);
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+a:not(.file-tag) {
+    color: var(--primary-clr);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease, text-decoration 0.2s ease;
+}
+
+a:not(.file-tag):hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
+.top-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 0 24px;
+    background: #fff;
+    height: 60px;
+    flex-shrink: 0;
+    z-index: 10;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    overflow-x: auto;
+}
+
+.nav-branding {
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    white-space: nowrap;
+}
+
+.nav-branding > span {
+    color: var(--primary-clr);
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 18px;
+    white-space: nowrap;
+}
+
+.nav-task-switcher {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 8px;
+}
+
+.nav-task-btn {
+    padding: 8px 12px;
+    border: 1px solid var(--border-subtle);
+    background: #fff;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.nav-task-btn:hover {
+    background-color: var(--bg-workspace);
+    color: var(--text-main);
+}
+
+.nav-task-btn.active {
+    background: var(--primary-clr);
+    color: #fff;
+    border-color: var(--primary-clr);
+}
+
+.app-container {
+    display: flex;
+    flex: 1;
+    height: calc(100vh - 60px);
+    width: 100vw;
+    overflow: hidden;
+}
+
+.left-sidebar {
+    width: 320px;
+    border-right: 1px solid var(--border-subtle);
+    background: #fff;
+    flex-shrink: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-section h3 {
+    font-size: 13px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    letter-spacing: 0.8px;
+    font-weight: 700;
+}
+
+.cluster-nav-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-right: 4px;
+}
+
+.cluster-nav-list::-webkit-scrollbar,
+.center-workspace::-webkit-scrollbar,
+.file-grid-tray::-webkit-scrollbar,
+.source-file-list::-webkit-scrollbar,
+.guidance-dock::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.cluster-nav-list::-webkit-scrollbar-thumb,
+.center-workspace::-webkit-scrollbar-thumb,
+.file-grid-tray::-webkit-scrollbar-thumb,
+.source-file-list::-webkit-scrollbar-thumb,
+.guidance-dock::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 10px;
+}
+
+.algo-group-header {
+    font-size: 16px;
+    color: var(--text-main);
+    font-weight: 700;
+    margin: 0 0 12px 0;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cluster-nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border: 1px solid transparent;
+    background: #fff;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 15px;
+    text-align: left;
+    transition: all 0.2s ease;
+    color: var(--text-muted);
+}
+
+.cluster-nav-btn:hover {
+    background-color: var(--bg-workspace);
+    color: var(--text-main);
+}
+
+.cluster-nav-btn.active {
+    background-color: rgba(2, 132, 199, 0.05);
+    border-color: rgba(2, 132, 199, 0.2);
+    color: var(--primary-clr);
+    font-weight: 600;
+}
+
+.progress-section {
+    padding: 12px 20px 16px 20px;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.progress-task-row {
+    margin-bottom: 14px;
+}
+
+.progress-task-row:last-child {
+    margin-bottom: 0;
+}
+
+.progress-task-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 7px;
+    line-height: 1.35;
+}
+
+.progress-dot-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.progress-cluster-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: var(--border-subtle);
+    transition: background-color 0.3s ease;
+}
+
+.progress-cluster-dot.completed {
+    background-color: var(--accent-green);
+}
+
+.btn-export {
+    background-color: var(--primary-clr);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.2s;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2);
+    flex-shrink: 0;
+    margin: 0 20px 20px 20px;
+}
+
+.btn-export:hover {
+    background-color: var(--primary-hover);
+}
+
+.btn-export:disabled {
+    background-color: #cbd5e1;
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.75;
+}
+
+.btn-export:disabled:hover {
+    background-color: #cbd5e1;
+}
+
+.center-workspace {
+    flex: 1;
+    padding: 24px;
+    overflow-y: scroll;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+}
+
+.cluster-card {
+    background: var(--surface-card);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 900px;
+    flex-shrink: 0;
+    margin-bottom: 40px;
+}
+
+.cluster-header {
+    padding: 18px 24px;
+    background: #fff;
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.cluster-title-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.cluster-id-pill {
+    background: var(--primary-hover);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+}
+
+.cluster-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.section-primary-heading {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.section-primary-heading svg {
+    color: var(--primary-clr);
+    flex-shrink: 0;
+}
+
+.accordion-primary-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.accordion-primary-heading svg {
+    color: var(--primary-clr);
+    flex-shrink: 0;
+}
+
+.cluster-body-stacked {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background: #fff;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.cluster-desc-content {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #2b2d42;
+    background: #fdfdfd;
+    padding: 16px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+}
+
+.file-section-accordion {
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    background: #fff;
+}
+
+.accordion-header {
+    padding: 12px 16px;
+    background: #f8fafc;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 15px;
+    font-weight: 600;
+    user-select: none;
+    transition: background 0.2s;
+}
+
+.accordion-header:hover {
+    background: #f1f5f9;
+}
+
+.accordion-icon {
+    transition: transform 0.2s ease;
+}
+
+.file-section-accordion.open .accordion-icon {
+    transform: rotate(180deg);
+}
+
+.accordion-content {
+    display: none;
+    padding: 16px;
+    border-top: 1px solid var(--border-subtle);
+    background: #fafbfc;
+}
+
+.file-section-accordion.open .accordion-content {
+    display: block;
+}
+
+/* General subsystem/source-code link */
+.source-system-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--accent-blue);
+    background: #ffffff;
+    border: 1px solid var(--border-subtle);
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    word-break: break-all;
+    transition: all 0.2s ease;
+}
+
+.source-system-link:hover {
+    background-color: rgba(2, 62, 138, 0.05);
+    border-color: var(--accent-blue);
+    text-decoration: underline;
+}
+
+.source-file-list {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 8px;
+    max-height: 180px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.source-file-name {
+    background: #fff;
+    border: 1px solid var(--border-subtle);
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    color: var(--text-main);
+    font-family: monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.source-file-empty {
+    grid-column: 1 / -1;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-style: italic;
+}
+
+.cluster-evaluation-bar {
+    background: #fafbfc;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+}
+
+.scenario-box {
+    background-color: rgba(2, 62, 138, 0.04);
+    border-left: 3px solid var(--accent-blue);
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.scenario-box p {
+    font-size: 15px;
+    color: var(--text-main);
+    line-height: 1.5;
+    margin-top: 4px;
+}
+
+.eval-questions {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.question-item {
+    background: #fff;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 16px;
+}
+
+.question-text {
+    font-size: 15px;
+    font-weight: 500;
+    margin-bottom: 12px;
+    color: #333;
+}
+
+.question-text h3 {
+    font-size: 15px;
+    color: var(--primary-clr);
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 4px;
+}
+
+.rating-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.rating-btn-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--border-subtle);
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    cursor: pointer;
+    background: #fff;
+    transition: all 0.15s ease;
+}
+
+.rating-btn-label:hover {
+    background-color: var(--bg-workspace);
+    border-color: var(--text-muted);
+}
+
+.rating-btn-label.selected {
+    background-color: rgba(2, 132, 199, 0.08) !important;
+    border-color: var(--primary-clr);
+    color: var(--primary-clr);
+    font-weight: 600;
+}
+
+.guidance-dock {
+    width: 320px;
+    border-left: 1px solid var(--border-subtle);
+    background: #fff;
+    padding: 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex-shrink: 0;
+    height: 100%;
+}
+
+.dock-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--primary-clr);
+    border-bottom: 2px solid rgba(2, 132, 199, 0.1);
+    padding-bottom: 10px;
+}
+
+.dock-header h4 {
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.rubric-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 10px;
+}
+
+.rubric-item {
+    font-size: 15px;
+    line-height: 1.5;
+    background: var(--bg-workspace);
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--primary-clr);
+}
+
+.rubric-score {
+    font-weight: 700;
+    color: var(--text-main);
+    display: block;
+    margin-bottom: 4px;
+    font-size: 16px;
+}
+
+.empty-state {
+    color: var(--text-muted);
+    font-size: 16px;
+    text-align: center;
+    margin-top: 100px;
+}
+
+.error-state {
+    color: #b91c1c;
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    padding: 16px;
+    border-radius: var(--radius-md);
+    max-width: 800px;
+    line-height: 1.5;
+}
+
+/* Participant ID Modal */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.modal-box {
+    width: 100%;
+    max-width: 420px;
+    background: #ffffff;
+    border-radius: var(--radius-md);
+    padding: 24px;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+    border: 1px solid var(--border-subtle);
+}
+
+.modal-box h3 {
+    font-size: 20px;
+    color: var(--text-main);
+    margin-bottom: 14px;
+}
+
+.participant-id-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    outline: none;
+    margin-bottom: 8px;
+}
+
+.participant-id-input:focus {
+    border-color: var(--primary-clr);
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+}
+
+.participant-help-text {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.4;
+    margin-bottom: 10px;
+}
+
+.participant-error {
+    min-height: 18px;
+    font-size: 13px;
+    color: #b91c1c;
+    margin-bottom: 12px;
+}
+
+.modal-download-btn {
+    width: 100%;
+    background-color: var(--primary-clr);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.modal-download-btn:hover {
+    background-color: var(--primary-hover);
+}
+
+.thank-you-page {
+    min-height: 100vh;
+    width: 100vw;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    color: var(--text-main);
+}
+
+.thank-you-message {
+    max-width: 760px;
+    font-size: 20px;
+    line-height: 1.7;
+    text-align: center;
+    color: var(--text-main);
+}
+</style>
+</head>
+
+<body>
+<header class="top-nav">
+    <div class="nav-branding">
+        <span id="system_name"></span>
+        <div id="task-nav-container" class="nav-task-switcher"></div>
+    </div>
+</header>
+
+<div class="app-container">
+    <aside class="left-sidebar">
+        <div class="sidebar-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 20px;">
+            <div class="algo-group-header">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="9" y1="3" x2="9" y2="21"></line>
+                </svg>
+                <span id="algo-title-sidebar">Clusters</span>
+            </div>
+
+            <div class="cluster-nav-list" id="cluster-list-container"></div>
+        </div>
+
+        <div class="sidebar-section progress-section">
+            <h3 style="margin-bottom: 8px;">Progress</h3>
+            <div id="task-progress-container"></div>
+        </div>
+
+        <button class="btn-export" id="download-btn" onclick="openParticipantModal()" disabled>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Download (.JSON)
+        </button>
+    </aside>
+
+    <section class="center-workspace" id="workspace-container">
+        <div class="empty-state">Loading data...</div>
+    </section>
+
+    <aside class="guidance-dock">
+        <div class="dock-header">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <h4>Relevancy Rating</h4>
+        </div>
+
+        <div class="sidebar-section">
+            <h3>Likert scale</h3>
+
+            <div class="rubric-list">
+                <div class="rubric-item" style="border-left-color: #42a5f5;">
+                    <span class="rubric-score">Very relevant (5)</span>
+                    The cluster title and description contains sufficient information to answer the entire question.
+                </div>
+
+                <div class="rubric-item" style="border-left-color: #64b5f6;">
+                    <span class="rubric-score">Relevant (4)</span>
+                    The cluster's title and description contains information to answer part of the question.
+                </div>
+
+                <div class="rubric-item" style="border-left-color: #90caf9;">
+                    <span class="rubric-score">Distantly relevant (3)</span>
+                    The cluster's title and description does not contain information to answer the question, but the content relates vaguely to it.
+                </div>
+
+                <div class="rubric-item" style="border-left-color: #bbdefb;">
+                    <span class="rubric-score">Less relevant (2)</span>
+                    The cluster's title and description does not contain information to answer the question, but some entities relate to it.
+                </div>
+
+                <div class="rubric-item" style="border-left-color: #e3f2fd;">
+                    <span class="rubric-score">Not relevant (1)</span>
+                    The cluster's title and description has no relation to the question.
+                </div>
+            </div>
+        </div>
+    </aside>
+</div>
+
+<div class="modal-overlay" id="participant-modal" style="display: none;">
+    <div class="modal-box">
+        <h3>Participant ID Required</h3>
+
+        <form onsubmit="confirmParticipantDownload(event)">
+            <input
+                type="text"
+                id="participant-id-input"
+                class="participant-id-input"
+                placeholder="e.g., G10M7"
+                autocomplete="off"
+            >
+
+            <div class="participant-help-text">
+                Please enter your provided participant ID to download the file.
+            </div>
+
+            <div class="participant-error" id="participant-id-error"></div>
+
+            <button type="submit" class="modal-download-btn">
+                Download
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+const SYSTEM_NAME = "MAPREDUCE";
+const ALGORITHM_NAME = "ACDC";
+
+/*
+    These placeholders will be replaced by build_final_html.py.
+    Do not edit them manually.
+*/
+const TASKS = [
+    {
+        "id": "task1",
+        "name": "Task 1: Component “Client core”",
+        "scenario": "As a developer delving into Apache Hadoop Mapreduce internals, your task is to understand the design decisions behind the Client core component. You aim to learn its functionality and grasp its inner workings from components, connectors, and architectural solutions.",
+        "questions": [
+            {
+                "id": "q1",
+                "text": "<h3>Existence</h3><b>Question 1:</b> What are the components and connectors of the client core component?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q1</u>: Briefly <u>name and describe each component</u>, determine their <u>type (physical or logical)</u>, determine <u>how they are connected</u>, and <u>how they achieve the requirements</u> of the Client core component."
+            },
+            {
+                "id": "q2",
+                "text": "<h3>Property</h3><b>Question 2:</b> What quality attribute and quality attribute solutions (e.g., patterns or tactics) are considered in the design of the Client core component?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q2</u>: Mention the considered <u>quality attributes</u> and <u>describe the solutions</u> applied, and <u>how they achieve the requirements</u>."
+            },
+            {
+                "id": "q3",
+                "text": "<h3>Executive</h3><b>Question 3:</b> What are the technologies applied in the Client core component, and what is the rationale behind selecting these technologies?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q3</u>: Mention the technologies and tools, their associated <u>components</u>, <u>rationale</u>, and <u>how they achieve the requirements</u>."
+            }
+        ]
+    },
+    {
+        "id": "task2",
+        "name": "Task 2: Requirement security of “Client core”",
+        "scenario": "Security is important for Hadoop Mapreduce. Client core is the interface used by users, for this both security is important. You are tasked with exploring the architectural decisions that support security in Hadoop Mapreduce client core.",
+        "questions": [
+            {
+                "id": "q1",
+                "text": "<h3>Existence</h3><b>Question 1:</b> What components and connectors in Hadoop Mapreduce client core contribute to its security?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q1</u>: Briefly <u>name and describe each component</u>, determine their <u>type (physical or logical)</u>, determine <u>how they are connected</u>, and <u>how they achieve the security requirements</u>  of the client core."
+            },
+            {
+                "id": "q2",
+                "text": "<h3>Property</h3><b>Question 2:</b> What solutions (e.g., patterns or tactics) are implemented to support the security quality attribute in the Hadoop Mapreduce client core?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q2</u>:<u>Mention</u> and <u>describe the solutions applied</u> and <u>describe the solutions</u> applied, and <u>how they achieve the requirements</u>."
+            },
+            {
+                "id": "q3",
+                "text": "<h3>Executive</h3><b>Question 3:</b> Which tools and technologies are integrated into Hadoop Mapreduce client core to ensure its security?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q3</u>: Mention the technologies and tools, their associated <u>components</u>, <u>rationale</u>, and <u>how they achieve the requirements</u>."
+            }
+        ]
+    }
+];
+const clusters = [
+    {
+        "cluster_ID": "0",
+        "title": "Checkpoint Directory",
+        "description": "The checkpoint directory is responsible for managing the checkpoints of tasks in a Hadoop MapReduce job. It provides a way to store and retrieve the state of tasks in case of failures or retries. The directory collaborates with the job tracker and the task trackers to ensure that checkpoints are properly stored and retrieved. The checkpoint directory follows the active-passive architecture pattern, where the active component is the job tracker and the passive component is the checkpoint directory.",
+        "source_code": {
+            "label": "hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "url": "https://github.com/apache/hadoop/tree/trunk/hadoop-mapreduce-project/hadoop-mapreduce-client/hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "files": [
+                "checkpoint/CheckpointID.java",
+                "checkpoint/CheckpointNamingService.java",
+                "checkpoint/CheckpointService.java",
+                "checkpoint/EnumCounter.java",
+                "checkpoint/FSCheckpointID.java",
+                "checkpoint/FSCheckpointService.java",
+                "checkpoint/RandomNameCNS.java",
+                "checkpoint/SimpleNamingService.java",
+                "checkpoint/TaskCheckpointID.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "1",
+        "title": "Hadoop MapReduce Architecture",
+        "description": "The Hadoop MapReduce architecture is a distributed processing framework that is designed to process large data sets across clusters of computers. It consists of two main components: the JobTracker and the TaskTracker. The JobTracker is responsible for scheduling and monitoring the execution of jobs, while the TaskTracker is responsible for executing the tasks assigned by the JobTracker. The architecture is scalable, fault-tolerant, and provides high-throughput processing of data. It uses a master-slave architecture, where the master node (JobTracker) coordinates the execution of tasks across multiple slave nodes (TaskTrackers). The architecture also supports a pluggable input/output (I/O) layer, which allows it to work with different data sources and storage systems. The architecture is designed to be efficient, reliable, and easy to use, making it a popular choice for processing large-scale data sets in a distributed environment.",
+        "source_code": {
+            "label": "hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "url": "https://github.com/apache/hadoop/tree/trunk/hadoop-mapreduce-project/hadoop-mapreduce-client/hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "files": [
+                "FileSystemCounter.java",
+                "counters/AbstractCounters.java",
+                "counters/FileSystemCounterGroup.java",
+                "counters/FrameworkCounterGroup.java",
+                "util/ResourceBundles.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "2",
+        "title": "Hadoop MapReduce Architecture",
+        "description": "The Hadoop MapReduce architecture is a distributed processing framework that is designed to process large data sets across clusters of computers. It consists of two main components: the JobTracker and the TaskTracker. The JobTracker is responsible for scheduling and monitoring the execution of jobs, while the TaskTracker is responsible for executing the tasks assigned by the JobTracker. The architecture is scalable, fault-tolerant, and provides high-throughput processing of data. It uses a master-slave architecture, where the master node (JobTracker) coordinates the execution of tasks across multiple slave nodes (TaskTrackers). The architecture also supports a pluggable input/output (I/O) layer, which allows it to work with different data sources and storage systems. The architecture is designed to be efficient, reliable, and easy to use, making it a popular choice for processing large-scale data sets in a distributed environment.",
+        "source_code": {
+            "label": "hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "url": "https://github.com/apache/hadoop/tree/trunk/hadoop-mapreduce-project/hadoop-mapreduce-client/hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "files": [
+                "jobhistory/AMStartedEvent.java",
+                "jobhistory/AvroArrayUtils.java",
+                "jobhistory/EventReader.java",
+                "jobhistory/EventWriter.java",
+                " jobhistory/HistoryEvent.java",
+                "jobhistory/HistoryEventHandler.java",
+                "jobhistory/HistoryViewer.java",
+                "jobhistory/HistoryViewerPrinter.java",
+                "jobhistory/HumanReadableHistoryViewerPrinter.java",
+                "jobhistory/JSONHistoryViewerPrinter.java",
+                "jobhistory/JobFinishedEvent.java",
+                "jobhistory/JobHistoryParser.java",
+                "jobhistory/JobInfoChangeEvent.java",
+                "jobhistory/JobInitedEvent.java",
+                "jobhistory/JobPriorityChangeEvent.java",
+                "jobhistory/JobQueueChangeEvent.java",
+                "jobhistory/JobStatusChangedEvent.java",
+                "jobhistory/JobSubmittedEvent.java",
+                "jobhistory/JobUnsuccessfulCompletionEvent.java",
+                "jobhistory/MapAttemptFinishedEvent.java",
+                "jobhistory/NormalizedResourceEvent.java",
+                "jobhistory/ReduceAttemptFinishedEvent.java",
+                "jobhistory/TaskAttemptFinishedEvent.java",
+                "jobhistory/TaskAttemptStartedEvent.java",
+                "jobhistory/TaskAttemptUnsuccessfulCompletionEvent.java",
+                "jobhistory/TaskFailedEvent.java; jobhistory/TaskFinishedEvent.java",
+                "jobhistory/TaskStartedEvent.java",
+                "jobhistory/TaskUpdatedEvent.java",
+                "util/HostUtil.java",
+                "util/JobHistoryEventUtils.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "3",
+        "title": "Cluster-level architectural abstraction",
+        "description": "- The responsibility of this cluster is to provide a way to aggregate values in a generic manner.<br>- The components in this cluster collaborate by calling each other's methods to perform the aggregation.<br>- The quality attribute of this cluster is to be scalable, as it can handle large amounts of data.<br>- The technologies used in this cluster include Java, Maven, and JUnit.",
+        "source_code": {
+            "label": "hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "url": "https://github.com/apache/hadoop/tree/trunk/hadoop-mapreduce-project/hadoop-mapreduce-client/hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "files": [
+                "lib/aggregate/DoubleValueSum.java",
+                "lib/aggregate/LongValueMax.java",
+                "lib/aggregate/LongValueMin.java",
+                "lib/aggregate/LongValueSum.java",
+                "lib/aggregate/StringValueMax.java",
+                "lib/aggregate/StringValueMin.java",
+                "lib/aggregate/UniqValueCount.java",
+                "lib/aggregate/UserDefinedValueAggregatorDescriptor.java",
+                "lib/aggregate/ValueAggregator.java",
+                "lib/aggregate/ValueAggregatorBaseDescriptor.java",
+                "lib/aggregate/ValueAggregatorCombiner.java",
+                "lib/aggregate/ValueAggregatorDescriptor.java",
+                "lib/aggregate/ValueAggregatorJob.java",
+                "lib/aggregate/ValueAggregatorJobBase.java",
+                "lib/aggregate/ValueAggregatorMapper.java",
+                "lib/aggregate/ValueAggregatorReducer.java",
+                "lib/aggregate/ValueHistogram.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "4",
+        "title": "org.apache.hadoop.mapreduce.lib.chain",
+        "description": "This package provides the ChainMapper and ChainReducer classes, which allow multiple Mapper and Reducer classes to be linked together in a single MapReduce job. The ChainMapper class allows the output of one Mapper to be passed as input to another Mapper, while the ChainReducer class allows the output of one Reducer to be passed as input to another Reducer. This allows complex data processing pipelines to be created by combining multiple Mappers and Reducers in a flexible and modular way. Additionally, the package includes reducers for performing field selections and calculating the sum of values for a key. These reducers can be used as building blocks for more complex data processing tasks.<brTechnologies used: Java, Hadoop MapReduce, Apache Hadoop.",
+        "source_code": {
+            "label": "hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "url": "https://github.com/apache/hadoop/tree/trunk/hadoop-mapreduce-project/hadoop-mapreduce-client/hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "files": [
+                "ContextFactory.java",
+                "OutputCommitter.java",
+                "RecordReader.java",
+                "RecordWriter.java",
+                "Reducer.java",
+                "TaskAttemptContext.java",
+                "TaskInputOutputContext.java",
+                "lib/chain/Chain.java",
+                "lib/chain/ChainMapContextImpl.java",
+                "lib/chain/ChainMapper.java",
+                "lib/chain/ChainReduceContextImpl.java",
+                "lib/chain/ChainReducer.java",
+                "lib/fieldsel/FieldSelectionReducer.java",
+                "lib/reduce/IntSumReducer.java",
+                "lib/reduce/LongSumReducer.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "5",
+        "title": "org.apache.hadoop.mapreduce.lib.input",
+        "description": "This package provides classes for reading input data in the MapReduce framework. It includes the TextInputFormat, CombineTextInputFormat, KeyValueTextInputFormat, NLineInputFormat, and CombineFileInputFormat classes. These classes are used to read input data from various sources, such as text files, and combine small input files into larger splits to improve performance. The package also includes the FileInputFormat, FileSplit, and PathFilter classes, which are used to specify input files and filters for input data. The package provides implementations of CombineFileInputFormat for various file types, such as CombineFileTextInputFormat and CombineSequenceFileInputFormat. The package also includes the LineRecordReader, CombineFileRecordReader, and CombineFileSplit classes, which are used to read input data from files and combine multiple files into a single split. The package also includes the KeyValueLineRecordReader class, which is a subclass of LineRecordReader that reads input data in the key-value format. The package also includes the KeyValueTextInputFormat class, which is an InputFormat that reads input data in the ...",
+        "source_code": {
+            "label": "hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "url": "https://github.com/apache/hadoop/tree/trunk/hadoop-mapreduce-project/hadoop-mapreduce-client/hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "files": [
+                "InputSplit.java",
+                "lib/db/BigDecimalSplitter.java",
+                "lib/db/BooleanSplitter.java",
+                "lib/db/DBConfiguration.java",
+                "lib/db/DBInputFormat.java",
+                "lib/db/DBOutputFormat.java",
+                "lib/db/DBRecordReader.java",
+                "lib/db/DBSplitter.java",
+                "lib/db/DBWritable.java",
+                "lib/db/DataDrivenDBInputFormat.java",
+                "lib/db/DataDrivenDBRecordReader.java",
+                "lib/db/DateSplitter.java",
+                "lib/db/FloatSplitter.java",
+                "lib/db/IntegerSplitter.java",
+                "lib/db/MySQLDBRecordReader.java",
+                "lib/db/MySQLDataDrivenDBRecordReader.java",
+                "lib/db/OracleDBRecordReader.java",
+                "lib/db/OracleDataDrivenDBInputFormat.java",
+                "lib/db/OracleDataDrivenDBRecordReader.java",
+                "lib/db/OracleDateSplitter.java",
+                "lib/db/TextSplitter.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "6",
+        "title": "MapReduce Cluster Architecture",
+        "description": "The Hadoop MapReduce architecture is a distributed processing framework that is designed to handle large-scale data processing tasks. It consists of two main components: the Map component and the Reduce component. The Map component is responsible for dividing the input data into smaller chunks and mapping them to a set of intermediate key-value pairs. The Reduce component then processes these intermediate key-value pairs to produce the final output. The MapReduce architecture is highly scalable and fault-tolerant, as it allows for the distribution of processing tasks across a cluster of machines. It also supports a wide range of data processing tasks, including data aggregation, data mining, and machine learning. The MapReduce architecture is built on top of the Hadoop Distributed File System (HDFS), which provides a distributed storage system for large-scale data storage and processing. HDFS is designed to provide high-throughput access to application data, and it is fault-tolerant, scalable, and.",
+        "source_code": {
+            "label": "hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "url": "https://github.com/apache/hadoop/tree/trunk/hadoop-mapreduce-project/hadoop-mapreduce-client/hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "files": [
+                "lib/input/CombineFileInputFormat.java",
+                "lib/input/CombineFileRecordReader.java",
+                "lib/input/CombineFileRecordReaderWrapper.java",
+                "lib/input/CombineFileSplit.java",
+                "lib/input/CombineSequenceFileInputFormat.java",
+                "lib/input/CombineTextInputFormat.java",
+                "lib/input/CompressedSplitLineReader.java",
+                "lib/input/DelegatingInputFormat.java; lib/input/DelegatingMapper.java",
+                "lib/input/DelegatingRecordReader.java",
+                "lib/input/FileInputFormat.java",
+                "lib/input/FileSplit.java",
+                "lib/input/FixedLengthInputFormat.java",
+                "lib/input/FixedLengthRecordReader.java",
+                "lib/input/InvalidInputException.java",
+                "lib/input/LineRecordReader.java",
+                "lib/input/MultipleInputs.java",
+                "lib/input/SequenceFileAsBinaryInputFormat.java",
+                "lib/input/SequenceFileAsTextInputFormat.java",
+                "lib/input/SequenceFileAsTextRecordReader.java",
+                "lib/input/SequenceFileInputFilter.java",
+                "lib/input/SequenceFileInputFormat.java",
+                "lib/input/SequenceFileRecordReader.java",
+                "lib/input/SplitLineReader.java",
+                "lib/input/TaggedInputSplit.java",
+                "lib/input/UncompressedSplitLineReader.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "7",
+        "title": "Hadoop MapReduce Architecture Abstraction",
+        "description": "The lib/jobcontrol directory is responsible for managing and monitoring Hadoop MapReduce jobs. It provides a high-level abstraction for controlling and tracking the states of MapReduce jobs and their dependencies. The directory contains two key classes: ControlledJob and JobControl. ControlledJob encapsulates a MapReduce job and its dependency. It monitors the states of the depending jobs and updates the state of this job. It provides methods for setting and getting the job name, ID, state, message, and depending jobs. It also provides methods for checking the state of the job and submitting the job to the mapred framework. JobControl tracks the states of jobs by placing them into different tables according to their states. It submits jobs when they become ready. It monitors the states of running jobs and updates the states of jobs based on the state changes of their depending jobs states. It provides APIs for suspending/resuming the thread and.",
+        "source_code": {
+            "label": "hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "url": "https://github.com/apache/hadoop/tree/trunk/hadoop-mapreduce-project/hadoop-mapreduce-client/hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "files": [
+                "lib/jobcontrol/ControlledJob.java",
+                "lib/jobcontrol/JobControl.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "8",
+        "title": "Cluster-level architectural description of the Hadoop MapReduce join operation",
+        "description": "The Hadoop MapReduce join operation is implemented using a cluster of machines. The cluster consists of a coordinator node and multiple worker nodes. The coordinator node is responsible for managing the worker nodes and distributing the data to be processed. The worker nodes are responsible for performing the actual join operation on the data. The data is divided into smaller chunks and distributed to the worker nodes for processing. The worker nodes use the MapReduce framework to process the data and generate the output. The output is then collected by the coordinator node and combined to form the final output. The cluster is designed to be scalable, reliable, and fault-tolerant, ensuring that the join operation is completed successfully even in the presence of failures. The use of the MapReduce framework and distributed computing allows for efficient processing of large datasets, making the join operation a powerful tool for data analysis.",
+        "source_code": {
+            "label": "hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "url": "https://github.com/apache/hadoop/tree/trunk/hadoop-mapreduce-project/hadoop-mapreduce-client/hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "files": [
+                "lib/join/ArrayListBackedIterator.java",
+                "lib/join/ComposableInputFormat.java",
+                "lib/join/ComposableRecordReader.java",
+                "lib/join/CompositeInputFormat.java",
+                "lib/join/CompositeInputSplit.java",
+                "lib/join/CompositeRecordReader.java",
+                "lib/join/InnerJoinRecordReader.java",
+                "lib/join/JoinRecordReader.java",
+                "lib/join/MultiFilterRecordReader.java",
+                "lib/join/OuterJoinRecordReader.java",
+                "lib/join/OverrideRecordReader.java",
+                "lib/join/Parser.java",
+                "lib/join/ResetableIterator.java",
+                "lib/join/StreamBackedIterator.java",
+                "lib/join/TupleWritable.java",
+                "lib/join/WrappedRecordReader.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "9",
+        "title": "MapReduce",
+        "description": "The MapReduce directory is responsible for processing the input data and transforming it into a format that can be processed by the reducers. The mappers in this directory collaborate by passing data to each other and by sharing information about the input data. The mappers follow the MapReduce pattern, which is a distributed processing framework for large data sets. The MapReduce pattern separates the task of processing data into two main phases: the map phase and the reduce phase. The mappers in this directory are responsible for the map phase, which involves transforming the input data into a format that can be processed by the reducers.",
+        "source_code": {
+            "label": "hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "url": "https://github.com/apache/hadoop/tree/trunk/hadoop-mapreduce-project/hadoop-mapreduce-client/hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "files": [
+                "MapContext.java",
+                "Mapper.java",
+                "StatusReporter.java",
+                "lib/fieldsel/FieldSelectionMapper.java",
+                "lib/map/InverseMapper.java",
+                "lib/map/MultithreadedMapper.java",
+                "lib/map/TokenCounterMapper.java",
+                "lib/map/WrappedMapper.java",
+                "task/MapContextImpl.java",
+                "task/TaskInputOutputContextImpl.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "10",
+        "title": "Cluster-level architectural abstraction for fault-tolerant manifest writing.",
+        "description": "The cluster consists of a writer thread and a queue for file entry lists. The writer thread is responsible for writing file entry lists to the output stream, managing shutdown, failing safely on write failures, and restarting all blocked writers. The code depends on the Apache Hadoop MapReduce library and the Apache Hadoop Common library. It also depends on theslf4j library for logging. The architecture ensures fault-tolerant manifest writing and is scalable, maintainable, reliable, secure, and performant.",
+        "source_code": {
+            "label": "hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "url": "https://github.com/apache/hadoop/tree/trunk/hadoop-mapreduce-project/hadoop-mapreduce-client/hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "files": [
+                "lib/output/committer/manifest/impl/EntryFileIO.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "11",
+        "title": "Hadoop MapReduce Architecture",
+        "description": "The Hadoop MapReduce architecture is a distributed processing framework that enables scalable data processing and analysis. It consists of the following components:<br>- Hadoop Distributed File System (HDFS): stores the input data and intermediate results.<br>- MapReduce framework: schedules and executes the tasks on the cluster.<br>- Map tasks: process the input data and generate intermediate key-value pairs.<br>- Reduce tasks: process the intermediate data and generate the final output.<br>- YARN (Yet Another Resource Negotiator): manages the resources and schedules the tasks on the cluster.<br>The MapReduce architecture follows the divide and conquer pattern, where the input data is divided into smaller chunks and processed in parallel. The intermediate results are stored in HDFS and processed by the Reduce tasks. The YARN manages the resources and schedules the tasks on the cluster to optimize the performance and efficiency.",
+        "source_code": {
+            "label": "hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "url": "https://github.com/apache/hadoop/tree/trunk/hadoop-mapreduce-project/hadoop-mapreduce-client/hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "files": [
+                "lib/output/BindingPathOutputCommitter.java",
+                "lib/output/PathOutputCommitter.java",
+                "lib/output/committer/manifest/ManifestCommitter.java",
+                "lib/output/committer/manifest/ManifestCommitterConfig.java",
+                "lib/output/committer/manifest/ManifestCommitterConstants.java",
+                "lib/output/committer/manifest/ManifestCommitterFactory.java",
+                "lib/output/committer/manifest/ManifestCommitterStatisticNames.java",
+                "lib/output/committer/manifest/files/AbstractManifestData.java",
+                "lib/output/committer/manifest/files/DiagnosticKeys.java",
+                "lib/output/committer/manifest/files/DirEntry.java",
+                "lib/output/committer/manifest/files/EntryStatus.java",
+                "lib/output/committer/manifest/files/FileEntry.java",
+                "lib/output/committer/manifest/files/ManifestPrinter.java",
+                "lib/output/committer/manifest/files/ManifestSuccessData.java",
+                "lib/output/committer/manifest/files/TaskManifest.java",
+                "lib/output/committer/manifest/impl/AuditingIntegration.java",
+                "lib/output/committer/manifest/impl/InternalConstants.java",
+                "lib/output/committer/manifest/impl/LoadedManifestData.java",
+                "lib/output/committer/manifest/impl/ManifestCommitterSupport.java",
+                "lib/output/committer/manifest/impl/ManifestStoreOperations.java",
+                "lib/output/committer/manifest/impl/ManifestStoreOperationsThroughFileSystem.java",
+                "lib/output/committer/manifest/impl/OutputValidationException.java",
+                "lib/output/committer/manifest/stages/AbortTaskStage.java",
+                "lib/output/committer/manifest/stages/CleanupJobStage.java",
+                "lib/output/committer/manifest/stages/CommitJobStage.java",
+                "lib/output/committer/manifest/stages/CommitTaskStage.java",
+                "lib/output/committer/manifest/stages/CreateOutputDirectoriesStage.java",
+                "lib/output/committer/manifest/stages/RenameFilesStage.java",
+                "lib/output/committer/manifest/stages/SaveSuccessFileStage.java",
+                "lib/output/committer/manifest/stages/SaveTaskManifestStage.java",
+                "lib/output/committer/manifest/stages/SetupJobStage.java",
+                "lib/output/committer/manifest/stages/SetupTaskStage.java",
+                "lib/output/committer/manifest/stages/StageConfig.java",
+                "lib/output/committer/manifest/stages/StageEventCallbacks.java",
+                "lib/output/committer/manifest/stages/TaskAttemptScanDirectoryStage.java",
+                "lib/output/committer/manifest/stages/ValidateRenamedFilesStage.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "12",
+        "title": "Apache Hadoop MapReduce Architecture",
+        "description": "The lib/output/committer directory is responsible for managing the commit process of MapReduce jobs. It collaborates with the other files and directories to ensure that the output of the job is properly committed to the specified location. The architectural role of this directory is to provide a fault-tolerant and reliable commit process for MapReduce jobs, ensuring that the output is consistent and durable. This directory follows the pattern of the OutputCommitter interface, which defines the methods for committing, aborting, and cleaning up the output of a MapReduce job.",
+        "source_code": {
+            "label": "hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "url": "https://github.com/apache/hadoop/tree/trunk/hadoop-mapreduce-project/hadoop-mapreduce-client/hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "files": [
+                "lib/output/committer/manifest/stages/AbstractJobOrTaskStage.java",
+                "lib/output/committer/manifest/stages/JobOrTaskStage.java",
+                "lib/output/committer/manifest/stages/LoadManifestsStage.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "13",
+        "title": "MapReduce",
+        "description": "The MapReduce directory is responsible for managing and executing tasks in the Hadoop MapReduce architecture. It collaborates with other directories and files to ensure the efficient processing of large datasets. The directory follows the architectural pattern of the Hadoop framework, which is designed to handle distributed processing of large data sets across clusters of computers. The MapReduce directory includes components for task management, data distribution, and result aggregation. It also incorporates quality attributes such as scalability, fault tolerance, and data locality to optimize performance and reliability. The directory utilizes technologies such as Java, XML, and YARN (Yet Another Resource Negotiator) to implement the MapReduce algorithm and manage resources across the cluster.",
+        "source_code": {
+            "label": "hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "url": "https://github.com/apache/hadoop/tree/trunk/hadoop-mapreduce-project/hadoop-mapreduce-client/hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "files": [
+                "OutputFormat.java",
+                "lib/output/FileOutputCommitter.java",
+                "lib/output/FileOutputCommitterFactory.java",
+                "lib/output/FileOutputFormat.java",
+                "lib/output/FilterOutputFormat.java",
+                "lib/output/LazyOutputFormat.java",
+                "lib/output/MapFileOutputFormat.java",
+                "lib/output/MultipleOutputs.java",
+                "lib/output/NamedCommitterFactory.java",
+                "lib/output/NullOutputFormat.java",
+                "lib/output/PartialFileOutputCommitter.java",
+                "lib/output/PartialOutputCommitter.java",
+                "lib/output/PathOutputCommitterFactory.java",
+                "lib/output/SequenceFileAsBinaryOutputFormat.java",
+                "lib/output/SequenceFileOutputFormat.java",
+                "lib/output/TextOutputFormat.java",
+                "security/TokenCache.java",
+                "task/annotation/Checkpointable.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "14",
+        "title": "Hadoop MapReduce Architecture",
+        "description": "The Hadoop MapReduce architecture is responsible for processing large-scale data across clusters of computers. It consists of two main components: the Map phase and the Reduce phase. The Map phase breaks down the input data into smaller chunks and processes them in parallel, while the Reduce phase aggregates the results and produces the final output. The InputFormat class is an abstract class that describes the input-specification for a Map-Reduce job, and it is responsible for validating the input-specification, splitting the input file(s) into logical InputSplits, and providing the RecordReader implementation to glean input records from the logical InputSplit for processing by the Mapper. The lib directory contains libraries that are used by the MapReduce framework to handle the distribution of data across the cluster, manage the execution of tasks, and coordinate the communication between different nodes. The architectural role of this directory is to provide a modular and extensible framework.",
+        "source_code": {
+            "label": "hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "url": "https://github.com/apache/hadoop/tree/trunk/hadoop-mapreduce-project/hadoop-mapreduce-client/hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "files": [
+                "InputFormat.java",
+                "lib/partition/InputSampler.java",
+                "lib/partition/TotalOrderPartitioner.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "15",
+        "title": "lib/reduce - Hadoop MapReduce Architecture",
+        "description": "The lib/reduce directory is a crucial part of the Hadoop MapReduce architecture, providing a high-level abstraction for executing reduce tasks in a distributed environment. It collaborates with other components to ensure the efficient and reliable execution of reduce tasks. The directory follows the pattern of the MapReduce architecture, providing a centralized location for reduce-related functionality and ensuring modularity and extensibility. The lib/reduce directory includes a coordinator component that oversees the execution of reduce tasks and coordinates communication between the various components. It also includes a worker component that performs the actual computation for each reduce task. The directory also includes a data model that defines the data structures and formats used for communication between the components. Additionally, the lib/reduce directory includes utility components for managing and monitoring the execution of reduce tasks, as well as adapter components for integrating with external systems and services. The directory is implemented using Java.",
+        "source_code": {
+            "label": "hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "url": "https://github.com/apache/hadoop/tree/trunk/hadoop-mapreduce-project/hadoop-mapreduce-client/hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "files": [
+                "lib/reduce/WrappedReducer.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "16",
+        "title": "Hadoop MapReduce Architecture2",
+        "description": "The Hadoop MapReduce architecture is a distributed processing framework that enables large-scale data processing tasks. It consists of a cluster of nodes, each running a task tracker, and a centralized job tracker that coordinates the tasks. The architecture supports various types of tasks, including map, reduce, and shuffle, and provides fault tolerance and scalability. The MapReduce architecture is highly scalable, fault-tolerant, and provides performance improvements through data locality and speculative execution. It uses the Hadoop Distributed File System (HDFS) for distributed storage and communication between nodes.",
+        "source_code": {
+            "label": "hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "url": "https://github.com/apache/hadoop/tree/trunk/hadoop-mapreduce-project/hadoop-mapreduce-client/hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "files": [
+                "ClusterMetrics.java",
+                "QueueAclsInfo.java",
+                "TaskTrackerInfo.java",
+                "protocol/ClientProtocol.java",
+                "security/token/delegation/DelegationTokenIdentifier.java",
+                "security/token/delegation/DelegationTokenSecretManager.java",
+                "security/token/delegation/DelegationTokenSelector.java",
+                "v2/LogParams.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "17",
+        "title": "Hadoop MapReduce Security Architecture",
+        "description": "The Hadoop MapReduce security architecture is responsible for generating and verifying hashes using a secret key, as well as caching job tokens for fast access. The architecture consists of the following components: - JobTokenSecretManager: This component is responsible for generating and verifying hashes using a secret key. It collaborates with the classes in the security directory to cache job tokens. - Security classes: These classes are responsible for security-related functionality in Hadoop MapReduce. They collaborate with the JobTokenSecretManager to generate and verify hashes and cache job tokens. - SecretManager pattern: The SecretManager pattern is used in the security directory to provide a centralized way to manage secrets and tokens. The architecture achieves scalability, maintainability, and reliability by using the SecretManager pattern to manage secrets and tokens. It also achieves security by generating and verifying hashes using a secret key. The architecture uses technologies such as Java and the Hadoop MapReduce.",
+        "source_code": {
+            "label": "hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "url": "https://github.com/apache/hadoop/tree/trunk/hadoop-mapreduce-project/hadoop-mapreduce-client/hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "files": [
+                "security/SecureShuffleUtils.java",
+                "security/token/JobTokenSecretManager.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "18",
+        "title": "Hadoop MapReduce security/token directory",
+        "description": "The security/token directory in Hadoop MapReduce contains classes related to authentication and authorization. The classes in this directory are used to identify and authenticate jobs running on the Hadoop cluster. The JobTokenIdentifier class is used to identify a job token, and the JobTokenSelector class is used to select a job token from a collection of tokens. These classes collaborate to ensure that only authorized jobs can access the cluster resources. The security/token directory plays a crucial role in the security of the Hadoop cluster by providing authentication and authorization mechanisms for jobs.",
+        "source_code": {
+            "label": "hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "url": "https://github.com/apache/hadoop/tree/trunk/hadoop-mapreduce-project/hadoop-mapreduce-client/hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "files": [
+                "security/token/JobTokenIdentifier.java",
+                "security/token/JobTokenSelector.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "19",
+        "title": "Hadoop MapReduce Architecture",
+        "description": "The Hadoop MapReduce architecture is a distributed processing framework that allows for the processing of large data sets across clusters of computers. It consists of a master node, which coordinates the tasks and distributes the data, and multiple slave nodes, which execute the tasks and store the data. The master node assigns tasks to the slave nodes based on their availability and the data location, and monitors the progress of the tasks. The data is stored in a distributed file system, which allows for efficient access and sharing of data across the cluster. The architecture is designed to be scalable, fault-tolerant, and efficient, and it supports a wide range of applications, including web search, data mining, and machine learning.",
+        "source_code": {
+            "label": "hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "url": "https://github.com/apache/hadoop/tree/trunk/hadoop-mapreduce-project/hadoop-mapreduce-client/hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "files": [
+                "Cluster.java",
+                "Counter.java",
+                "CounterGroup.java",
+                "Counters.java",
+                "ID.java",
+                "Job.java",
+                "JobACL.java",
+                "JobCounter.java",
+                "JobID.java",
+                "JobPriority.java",
+                "JobResourceUploader.java",
+                "JobStatus.java",
+                "JobSubmissionFiles.java",
+                "JobSubmitter.java",
+                "QueueInfo.java",
+                "QueueState.java",
+                "SharedCacheConfig.java",
+                "TaskCompletionEvent.java",
+                "TaskCounter.java",
+                "TaskID.java",
+                "TaskReport.java",
+                "TaskType.java",
+                "counters/AbstractCounter.java",
+                "counters/AbstractCounterGroup.java",
+                "counters/CounterGroupBase.java",
+                "counters/CounterGroupFactory.java",
+                "counters/GenericCounter.java",
+                "counters/LimitExceededException.java",
+                "counters/Limits.java",
+                "filecache/ClientDistributedCacheManager.java",
+                "filecache/DistributedCache.java",
+                "protocol/ClientProtocolProvider.java",
+                "split/JobSplit.java",
+                "split/JobSplitWriter.java",
+                "split/SplitMetaInfoReader.java",
+                "tools/CLI.java",
+                "util/CountersStrings.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "20",
+        "title": "MapReduce - Shuffle and Sort",
+        "description": "The shuffle and sort phase of a MapReduce job is responsible for merging the output of multiple map tasks into a single sorted output for the reduce task. This phase involves several key components, including the ShuffleScheduler, MergeManager, Fetcher, and EventFetcher. The ShuffleScheduler is responsible for scheduling the execution of map tasks, while the MergeManager is responsible for merging the map output files. The Fetcher and EventFetcher threads are used to fetch map output and shuffle events from the shuffle server. The shuffle and sort phase is a critical part of the MapReduce framework, as it ensures that the reduce task receives the data in the correct order and format for processing.",
+        "source_code": {
+            "label": "hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "url": "https://github.com/apache/hadoop/tree/trunk/hadoop-mapreduce-project/hadoop-mapreduce-client/hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "files": [
+                "CryptoUtils.java",
+                "TaskAttemptID.java",
+                "security/IntermediateEncryptedStream.java",
+                "security/SpillCallBackInjector.java",
+                "security/SpillCallBackPathsFinder.java",
+                "task/reduce/EventFetcher.java",
+                "task/reduce/ExceptionReporter.java",
+                "task/reduce/Fetcher.java",
+                "task/reduce/IFileWrappedMapOutput.java",
+                "task/reduce/InMemoryMapOutput.java",
+                "task/reduce/InMemoryReader.java",
+                "task/reduce/InMemoryWriter.java",
+                "task/reduce/LocalFetcher.java",
+                "task/reduce/MapHost.java",
+                "task/reduce/MapOutput.java",
+                "task/reduce/MergeManager.java",
+                "task/reduce/MergeManagerImpl.java",
+                "task/reduce/MergeThread.java",
+                "task/reduce/OnDiskMapOutput.java",
+                "task/reduce/Shuffle.java",
+                "task/reduce/ShuffleClientMetrics.java",
+                "task/reduce/ShuffleHeader.java",
+                "task/reduce/ShuffleScheduler.java",
+                "task/reduce/ShuffleSchedulerImpl.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "21",
+        "title": "MapReduce - Cluster-level Architecture",
+        "description": "The Hadoop MapReduce framework is a distributed processing system that enables the processing of large data sets across clusters of computers. It consists of two main components: the MapReduce engine and the distributed file system (DFS). The MapReduce engine is responsible for dividing the input data into smaller chunks, mapping these chunks to individual tasks, and then reducing the results. The DFS is responsible for storing the input data and intermediate results in a distributed manner. The MapReduce engine is further divided into the JobTracker and the TaskTrackers. The JobTracker is responsible for scheduling and monitoring the execution of jobs, while the TaskTrackers are responsible for running the individual tasks on the cluster. The communication between the components is done using the Hadoop RPC mechanism. The system is designed to be scalable, fault-tolerant, and efficient, and it supports a wide range of applications, including web search, data mining, and machine.",
+        "source_code": {
+            "label": "hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "url": "https://github.com/apache/hadoop/tree/trunk/hadoop-mapreduce-project/hadoop-mapreduce-client/hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "files": [
+                "CryptoUtils.java",
+                "MarkableIterator.java",
+                "MarkableIteratorInterface.java",
+                "ReduceContext.java",
+                "lib/input/TextInputFormat.java",
+                "lib/partition/HashPartitioner.java",
+                "task/JobContextImpl.java",
+                "task/ReduceContextImpl.java",
+                "task/TaskAttemptContextImpl.java"
+            ]
+        }
+    },
+    {
+        "cluster_ID": "22",
+        "title": "MapReduce Cluster Architecture",
+        "description": "The Hadoop MapReduce framework is a software framework for easily writing applications that process vast amounts of data (multi-terabyte data-sets) parallelly on large clusters (thousands of nodes) built of commodity hardware in a reliable, fault-tolerant manner. The framework is designed to scale up from single servers to thousands of machines, each offering local computation and storage. Rather than rely on hardware failures, the framework copes with software failures by transparently recovering tasks and reexecuting them on other nodes. The MapReduce framework consists of the following components: Map, which takes an input key/value pair and returns a set of intermediate key/value pairs; Shuffle and Sort, which sorts the intermediate keys by the framework; and Reduce, which takes a set of intermediate key/value pairs and returns a set of output key/value pairs. The MapReduce framework provides several quality attributes, such as scalability, maintainability, reliability, security, and performance. It is built on top.",
+        "source_code": {
+            "label": "hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "url": "https://github.com/apache/hadoop/tree/trunk/hadoop-mapreduce-project/hadoop-mapreduce-client/hadoop-mapreduce-client-core/src/main/java/org/apache/hadoop/mapreduce",
+            "files": [
+                "JobContext.java",
+                "MRConfig.java",
+                "MRJobConfig.java",
+                "Partitioner.java",
+                "lib/fieldsel/FieldSelectionHelper.java",
+                "lib/input/KeyValueLineRecordReader.java",
+                "lib/input/KeyValueTextInputFormat.java",
+                "lib/input/NLineInputFormat.java",
+                "lib/map/RegexMapper.java",
+                "lib/partition/BinaryPartitioner.java",
+                "lib/partition/KeyFieldBasedComparator.java",
+                "lib/partition/KeyFieldBasedPartitioner.java",
+                "lib/partition/KeyFieldHelper.java",
+                "lib/partition/RehashPartitioner.java",
+                "server/jobtracker/JTConfig.java",
+                "server/tasktracker/TTConfig.java",
+                "util/ConfigUtil.java",
+                "util/MRJobConfUtil.java",
+                "util/ProcessTree.java"
+            ]
+        }
+    }
+];
+
+document.getElementById("system_name").textContent = "Project: " + SYSTEM_NAME;
+
+let currentActiveTask = TASKS.length > 0 ? TASKS[0].id : null;
+let currentActiveCluster = null;
+let evaluationAnswers = {};
+
+function initDashboard() {
+    renderTopTaskSwitcher();
+    renderSidebar();
+    updateProgressIndicators();
+
+    if (clusters.length > 0) {
+        selectCluster(clusters[0].cluster_ID);
+    } else {
+        document.getElementById("workspace-container").innerHTML = `
+            <div class="empty-state">No clusters found.</div>
+        `;
+    }
+}
+
+function renderTopTaskSwitcher() {
+    const container = document.getElementById("task-nav-container");
+    container.innerHTML = "";
+
+    TASKS.forEach(task => {
+        const btn = document.createElement("button");
+        btn.className = `nav-task-btn ${task.id === currentActiveTask ? "active" : ""}`;
+        btn.innerText = task.name;
+
+        btn.onclick = () => {
+            currentActiveTask = task.id;
+
+            document.querySelectorAll(".nav-task-btn").forEach(b => {
+                b.classList.remove("active");
+            });
+
+            btn.classList.add("active");
+
+            renderSidebar();
+            renderWorkspaceCard();
+            updateProgressIndicators();
+        };
+
+        container.appendChild(btn);
+    });
+}
+
+function renderSidebar() {
+    const container = document.getElementById("cluster-list-container");
+    let html = "";
+
+    clusters.forEach(cluster => {
+        html += `
+            <button class="cluster-nav-btn ${currentActiveCluster === cluster.cluster_ID ? "active" : ""}"
+                    id="nav-${cluster.cluster_ID}"
+                    onclick="selectCluster('${cluster.cluster_ID}')">
+                <span>${cluster.cluster_ID}</span>
+            </button>
+        `;
+    });
+
+    container.innerHTML = html;
+    updateProgressIndicators();
+}
+
+function checkTaskCompletion(clusterId, taskId) {
+    const task = TASKS.find(t => t.id === taskId);
+
+    if (!task) return false;
+
+    return task.questions.every(q => {
+        const uniqueKey = `${clusterId}_${taskId}_${q.id}`;
+        return evaluationAnswers[uniqueKey];
+    });
+}
+
+function selectCluster(clusterId) {
+    currentActiveCluster = clusterId;
+
+    document.querySelectorAll(".cluster-nav-btn").forEach(btn => {
+        btn.classList.remove("active");
+    });
+
+    const activeBtn = document.getElementById(`nav-${clusterId}`);
+
+    if (activeBtn) {
+        activeBtn.classList.add("active");
+    }
+
+    renderWorkspaceCard();
+}
+
+function toggleAccordion(element) {
+    element.parentElement.classList.toggle("open");
+}
+
+function renderWorkspaceCard() {
+    const container = document.getElementById("workspace-container");
+    const cluster = clusters.find(c => c.cluster_ID === currentActiveCluster);
+
+    if (!cluster) {
+        container.innerHTML = `<div class="empty-state">Select a cluster from the sidebar to begin evaluation.</div>`;
+        return;
+    }
+
+    const activeTaskData = TASKS.find(t => t.id === currentActiveTask);
+
+    if (!activeTaskData) {
+        container.innerHTML = `<div class="empty-state">No active task selected.</div>`;
+        return;
+    }
+
+    const rawSourceCode = cluster.source_code || {};
+
+    const sourceCode = {
+        label: rawSourceCode.label || "Source code location",
+        url: rawSourceCode.url || "#",
+        files: Array.isArray(rawSourceCode.files) ? rawSourceCode.files : []
+    };
+
+    let sourceFilesHTML = "";
+
+    if (sourceCode.files.length > 0) {
+        sourceCode.files.forEach(fileName => {
+            sourceFilesHTML += `
+                <div class="source-file-name" title="${fileName}">
+                    ${fileName}
+                </div>
+            `;
+        });
+    } else {
+        sourceFilesHTML = `
+            <div class="source-file-empty">
+                No specific file names provided.
+            </div>
+        `;
+    }
+
+    const sourceCodeHTML = `
+        <a href="${sourceCode.url}" target="_blank" class="source-system-link" title="${sourceCode.url}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+            ${sourceCode.label}
+        </a>
+
+        <div class="source-file-list">
+            ${sourceFilesHTML}
+        </div>
+    `;
+
+    let evalRowsHTML = "";
+
+    activeTaskData.questions.forEach(question => {
+        const uniqueKey = `${cluster.cluster_ID}_${activeTaskData.id}_${question.id}`;
+        const savedValue = evaluationAnswers[uniqueKey] || "";
+        let optionsHTML = "";
+
+        for (let score = 1; score <= 5; score++) {
+            let radioLabel = "";
+            let color = "#";
+
+            switch (score) {
+                case 1:
+                    radioLabel = "Not relevant (1)";
+                    color += "e3f2fd";
+                    break;
+                case 2:
+                    radioLabel = "Less relevant (2)";
+                    color += "bbdefb";
+                    break;
+                case 3:
+                    radioLabel = "Distantly relevant (3)";
+                    color += "90caf9";
+                    break;
+                case 4:
+                    radioLabel = "Relevant (4)";
+                    color += "64b5f6";
+                    break;
+                case 5:
+                    radioLabel = "Very relevant (5)";
+                    color += "42a5f5";
+                    break;
+            }
+
+            const isSelected = savedValue === radioLabel ? "selected" : "";
+
+            optionsHTML += `
+                <label class="rating-btn-label ${isSelected}"
+                       style="background:${color}"
+                       onclick="recordRating('${uniqueKey}', '${radioLabel}', this)">
+                    <input type="radio"
+                           name="${uniqueKey}"
+                           value="${radioLabel}"
+                           style="display:none;"
+                           ${isSelected ? "checked" : ""}>
+                    <span>${radioLabel}</span>
+                </label>
+            `;
+        }
+
+        evalRowsHTML += `
+            <div class="question-item">
+                <div class="question-text">${question.text}</div>
+                <div class="rating-row">${optionsHTML}</div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = `
+        <div class="cluster-card">
+            <div class="cluster-header">
+                <div class="cluster-title-area">
+                    <span class="cluster-id-pill">${cluster.cluster_ID}</span>
+                    <h3 class="cluster-title">${cluster.title}</h3>
+                </div>
+            </div>
+
+            <div class="cluster-body-stacked">
+                <div class="desc-box">
+                    <div class="section-primary-heading">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        Description
+                    </div>
+                    <div class="cluster-desc-content">${cluster.description}</div>
+                </div>
+
+                <div class="file-section-accordion">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                        <div class="accordion-primary-heading">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                            Source Code Location (${sourceCode.files.length} files)
+                        </div>
+
+                        <svg class="accordion-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+
+                    <div class="accordion-content">
+                        ${sourceCodeHTML}
+                    </div>
+                </div>
+            </div>
+
+            <div class="cluster-evaluation-bar">
+                <div class="scenario-box">
+                    <div class="section-primary-heading" style="margin-bottom: 8px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        Task Scenario
+                    </div>
+                    <p>${activeTaskData.scenario}</p>
+                </div>
+
+                <div class="section-primary-heading">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    Task Questions
+                </div>
+
+                <div class="eval-questions">
+                    ${evalRowsHTML}
+                </div>
+            </div>
+        </div>
+    `;
+
+    container.scrollTop = 0;
+}
+
+function recordRating(uniqueKey, radioLabel, element) {
+    evaluationAnswers[uniqueKey] = radioLabel;
+
+    const parentRow = element.parentElement;
+
+    parentRow.querySelectorAll(".rating-btn-label").forEach(label => {
+        label.classList.remove("selected");
+    });
+
+    element.classList.add("selected");
+
+    const input = element.querySelector("input[type='radio']");
+
+    if (input) {
+        input.checked = true;
+    }
+
+    updateProgressIndicators();
+}
+
+
+        function updateProgressIndicators() {
+            const container = document.getElementById("task-progress-container");
+
+            if (!container) return;
+
+            let html = "";
+
+            TASKS.forEach(task => {
+                let dotsHTML = "";
+
+                clusters.forEach(cluster => {
+                    const isComplete = checkTaskCompletion(cluster.cluster_ID, task.id);
+
+                    dotsHTML += `
+                        <span class="progress-cluster-dot ${isComplete ? "completed" : ""}"
+                              title="${task.name} - ${cluster.cluster_ID}">
+                        </span>
+                    `;
+                });
+
+                html += `
+                    <div class="progress-task-row">
+                        <div class="progress-task-title">${task.name}</div>
+                        <div class="progress-dot-row">
+                            ${dotsHTML}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+
+            updateDownloadButtonState();
+        }
+
+        function areAllEvaluationsComplete() {
+            if (!TASKS.length || !clusters.length) {
+                return false;
+            }
+
+            return TASKS.every(task => {
+                return clusters.every(cluster => {
+                    return checkTaskCompletion(cluster.cluster_ID, task.id);
+                });
+            });
+        }
+
+        function updateDownloadButtonState() {
+            const downloadBtn = document.getElementById("download-btn");
+
+            if (!downloadBtn) return;
+
+            const isComplete = areAllEvaluationsComplete();
+
+            downloadBtn.disabled = !isComplete;
+
+            if (isComplete) {
+                downloadBtn.title = "All evaluations are complete. You can now download your responses.";
+            } else {
+                downloadBtn.title = "Complete all questions for all clusters and tasks before downloading.";
+            }
+        }
+
+        function openParticipantModal() {
+            if (!areAllEvaluationsComplete()) {
+                return;
+            }
+
+            const modal = document.getElementById("participant-modal");
+            const input = document.getElementById("participant-id-input");
+            const error = document.getElementById("participant-id-error");
+
+            if (error) {
+                error.textContent = "";
+            }
+
+            if (input) {
+                input.value = "";
+            }
+
+            modal.style.display = "flex";
+
+            setTimeout(() => {
+                if (input) input.focus();
+            }, 50);
+        }
+
+        function confirmParticipantDownload(event) {
+            event.preventDefault();
+
+            const input = document.getElementById("participant-id-input");
+            const error = document.getElementById("participant-id-error");
+
+            const participantId = input.value.trim();
+
+            if (!participantId) {
+                error.textContent = "Participant ID is required before downloading.";
+                input.focus();
+                return;
+            }
+
+            error.textContent = "";
+
+            exportDataAsJSON(participantId);
+        }
+
+        function exportDataAsJSON(participantId) {
+            const exportStructure = {
+                exported_at: new Date().toISOString(),
+                participant_id: participantId,
+                system: SYSTEM_NAME,
+                algorithm: ALGORITHM_NAME,
+                tasks: TASKS.map(task => task.name),
+                evaluation_results: clusters.map(cluster => {
+                    const taskEvals = {};
+
+                    TASKS.forEach(task => {
+                        const qEvals = {};
+
+                        task.questions.forEach(question => {
+                            qEvals[question.id] = evaluationAnswers[`${cluster.cluster_ID}_${task.id}_${question.id}`] || "Not Evaluated";
+                        });
+
+                        taskEvals[task.id] = qEvals;
+                    });
+
+                    return {
+                        ...cluster,
+                        task_evaluations: taskEvals
+                    };
+                })
+            };
+
+            const jsonText = JSON.stringify(exportStructure, null, 4);
+            const blob = new Blob([jsonText], { type: "application/json;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+
+            const safeParticipantId = participantId.replace(/[^a-zA-Z0-9_-]/g, "_");
+
+            const downloadAnchor = document.createElement("a");
+            downloadAnchor.href = url;
+            downloadAnchor.download = `${SYSTEM_NAME}_${ALGORITHM_NAME}_${safeParticipantId}_Results.json`;
+
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+                showThankYouPage();
+            }, 300);
+        }
+
+        function showThankYouPage() {
+            document.body.innerHTML = `
+                <div class="thank-you-page">
+                    <div class="thank-you-message">
+                        Thank you for completing this task. Your responses have been saved to the downloaded .json file.
+                        Please upload this file to PANDA along with the <b>Result Sheet</b> once you have completed all other assigned tasks.
+                    </div>
+                </div>
+            `;
+
+            document.body.style.margin = "0";
+            document.body.style.overflow = "hidden";
+            document.documentElement.style.overflow = "hidden";
+        }
+
+        window.onload = initDashboard;
+    </script>
+</body>
+</html>

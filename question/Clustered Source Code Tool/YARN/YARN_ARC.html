@@ -1,0 +1,1696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clustered Source code</title>
+
+    <style>
+        :root {
+            --primary-clr: #0284c7;
+            --primary-hover: #0369a1;
+
+            --bg-workspace: #f8fafc;
+            --surface-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-subtle: #e2e8f0;
+
+            --accent-blue: #2563eb;
+            --accent-green: #10b981;
+
+            --radius-md: 8px;
+            --radius-sm: 4px;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        html, body {
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            color: var(--text-main);
+            background-color: var(--bg-workspace);
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        a:not(.file-tag) {
+            color: var(--primary-clr);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease, text-decoration 0.2s ease;
+        }
+
+        a:not(.file-tag):hover {
+            color: var(--primary-hover);
+            text-decoration: underline;
+        }
+
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0 24px;
+            background: #fff;
+            height: 60px;
+            flex-shrink: 0;
+            z-index: 10;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            overflow-x: auto;
+        }
+
+        .nav-branding {
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            white-space: nowrap;
+        }
+
+        .nav-branding > span {
+            color: var(--primary-clr);
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            font-size: 18px;
+            white-space: nowrap;
+        }
+
+        .nav-task-switcher {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 8px;
+        }
+
+        .nav-task-btn {
+            padding: 8px 12px;
+            border: 1px solid var(--border-subtle);
+            background: #fff;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .nav-task-btn:hover {
+            background-color: var(--bg-workspace);
+            color: var(--text-main);
+        }
+
+        .nav-task-btn.active {
+            background: var(--primary-clr);
+            color: #fff;
+            border-color: var(--primary-clr);
+        }
+
+        .app-container {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 60px);
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        .left-sidebar {
+            width: 320px;
+            border-right: 1px solid var(--border-subtle);
+            background: #fff;
+            flex-shrink: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-section h3 {
+            font-size: 13px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            letter-spacing: 0.8px;
+            font-weight: 700;
+        }
+
+        .cluster-nav-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding-right: 4px;
+        }
+
+        .cluster-nav-list::-webkit-scrollbar,
+        .center-workspace::-webkit-scrollbar,
+        .file-grid-tray::-webkit-scrollbar,
+        .guidance-dock::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .cluster-nav-list::-webkit-scrollbar-thumb,
+        .center-workspace::-webkit-scrollbar-thumb,
+        .file-grid-tray::-webkit-scrollbar-thumb,
+        .guidance-dock::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .algo-group-header {
+            font-size: 16px;
+            color: var(--text-main);
+            font-weight: 700;
+            margin: 0 0 12px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .cluster-nav-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border: 1px solid transparent;
+            background: #fff;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 15px;
+            text-align: left;
+            transition: all 0.2s ease;
+            color: var(--text-muted);
+        }
+
+        .cluster-nav-btn:hover {
+            background-color: var(--bg-workspace);
+            color: var(--text-main);
+        }
+
+        .cluster-nav-btn.active {
+            background-color: rgba(2, 132, 199, 0.05);
+            border-color: rgba(2, 132, 199, 0.2);
+            color: var(--primary-clr);
+            font-weight: 600;
+        }
+
+        .progress-section {
+            padding: 12px 20px 16px 20px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .progress-task-row {
+            margin-bottom: 14px;
+        }
+
+        .progress-task-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .progress-task-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 7px;
+            line-height: 1.35;
+        }
+
+        .progress-dot-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .progress-cluster-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--border-subtle);
+            transition: background-color 0.3s ease;
+        }
+
+        .progress-cluster-dot.completed {
+            background-color: var(--accent-green);
+        }
+
+        .btn-export {
+            background-color: var(--primary-clr);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.2s;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2);
+            flex-shrink: 0;
+            margin: 0 20px 20px 20px;
+        }
+
+        .btn-export:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .center-workspace {
+            flex: 1;
+            padding: 24px;
+            overflow-y: scroll;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+        }
+
+        .cluster-card {
+            background: var(--surface-card);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 900px;
+            flex-shrink: 0;
+            margin-bottom: 40px;
+        }
+
+        .cluster-header {
+            padding: 18px 24px;
+            background: #fff;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .cluster-title-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .cluster-id-pill {
+            background: var(--primary-hover);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+        }
+
+        .cluster-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .section-primary-heading {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: none;
+            letter-spacing: normal;
+        }
+
+        .section-primary-heading svg {
+            color: var(--primary-clr);
+            flex-shrink: 0;
+        }
+
+        .accordion-primary-heading {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .accordion-primary-heading svg {
+            color: var(--primary-clr);
+            flex-shrink: 0;
+        }
+
+        .cluster-body-stacked {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: #fff;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .cluster-desc-content {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #2b2d42;
+            background: #fdfdfd;
+            padding: 16px;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+        }
+
+        .file-section-accordion {
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            background: #fff;
+        }
+
+        .accordion-header {
+            padding: 12px 16px;
+            background: #f8fafc;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 15px;
+            font-weight: 600;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .accordion-header:hover {
+            background: #f1f5f9;
+        }
+
+        .accordion-icon {
+            transition: transform 0.2s ease;
+        }
+
+        .file-section-accordion.open .accordion-icon {
+            transform: rotate(180deg);
+        }
+
+        .accordion-content {
+            display: none;
+            padding: 16px;
+            border-top: 1px solid var(--border-subtle);
+            background: #fafbfc;
+        }
+
+        .file-section-accordion.open .accordion-content {
+            display: block;
+        }
+
+        .file-grid-tray {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 8px;
+            max-height: 180px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        a.file-tag {
+            background: #fff;
+            border: 1px solid var(--border-subtle);
+            padding: 8px 10px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            color: var(--accent-blue);
+            font-family: monospace;
+            text-decoration: none;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        a.file-tag:hover {
+            background-color: rgba(2, 62, 138, 0.05);
+            border-color: var(--accent-blue);
+            white-space: normal;
+            word-break: break-all;
+        }
+
+        a.file-tag svg {
+            flex-shrink: 0;
+        }
+
+        .cluster-evaluation-bar {
+            background: #fafbfc;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .scenario-box {
+            background-color: rgba(2, 62, 138, 0.04);
+            border-left: 3px solid var(--accent-blue);
+            padding: 14px 18px;
+            margin-bottom: 24px;
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+        }
+
+        .scenario-box p {
+            font-size: 15px;
+            color: var(--text-main);
+            line-height: 1.5;
+            margin-top: 4px;
+        }
+
+        .eval-questions {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .question-item {
+            background: #fff;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 16px;
+        }
+
+        .question-text {
+            font-size: 15px;
+            font-weight: 500;
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        .question-text h3 {
+            font-size: 15px;
+            color: var(--primary-clr);
+            margin-bottom: 8px;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 4px;
+        }
+
+        .rating-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .rating-btn-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid var(--border-subtle);
+            padding: 8px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            cursor: pointer;
+            background: #fff;
+            transition: all 0.15s ease;
+        }
+
+        .rating-btn-label:hover {
+            background-color: var(--bg-workspace);
+            border-color: var(--text-muted);
+        }
+
+        .rating-btn-label.selected {
+            background-color: rgba(2, 132, 199, 0.08) !important;
+            border-color: var(--primary-clr);
+            color: var(--primary-clr);
+            font-weight: 600;
+        }
+
+        .guidance-dock {
+            width: 320px;
+            border-left: 1px solid var(--border-subtle);
+            background: #fff;
+            padding: 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex-shrink: 0;
+            height: 100%;
+        }
+
+        .dock-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary-clr);
+            border-bottom: 2px solid rgba(2, 132, 199, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .dock-header h4 {
+            font-size: 16px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .rubric-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 10px;
+        }
+
+        .rubric-item {
+            font-size: 15px;
+            line-height: 1.5;
+            background: var(--bg-workspace);
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            border-left: 3px solid var(--primary-clr);
+        }
+
+        .rubric-score {
+            font-weight: 700;
+            color: var(--text-main);
+            display: block;
+            margin-bottom: 4px;
+            font-size: 16px;
+        }
+
+        .empty-state {
+            color: var(--text-muted);
+            font-size: 16px;
+            text-align: center;
+            margin-top: 100px;
+        }
+
+        .error-state {
+            color: #b91c1c;
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            padding: 16px;
+            border-radius: var(--radius-md);
+            max-width: 800px;
+            line-height: 1.5;
+        }
+
+
+        .btn-export:disabled {
+            background-color: #cbd5e1;
+            cursor: not-allowed;
+            box-shadow: none;
+            opacity: 0.75;
+        }
+
+        .btn-export:disabled:hover {
+            background-color: #cbd5e1;
+        }
+
+        /* Participant ID Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .modal-box {
+            width: 100%;
+            max-width: 420px;
+            background: #ffffff;
+            border-radius: var(--radius-md);
+            padding: 24px;
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .modal-box h2 {
+            font-size: 20px;
+            color: var(--text-main);
+            margin-bottom: 10px;
+        }
+
+        .participant-id-input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            font-size: 15px;
+            outline: none;
+            margin-bottom: 8px;
+        }
+
+        .participant-id-input:focus {
+            border-color: var(--primary-clr);
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+        }
+
+        .participant-help-text {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.4;
+            margin-bottom: 10px;
+        }
+
+        .participant-error {
+            min-height: 18px;
+            font-size: 13px;
+            color: #b91c1c;
+            margin-bottom: 12px;
+        }
+
+        .modal-download-btn {
+            width: 100%;
+            background-color: var(--primary-clr);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .modal-download-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .thank-you-page {
+            min-height: 100vh;
+            width: 100vw;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+            color: var(--text-main);
+        }
+
+        .thank-you-message {
+            max-width: 760px;
+            font-size: 20px;
+            line-height: 1.7;
+            text-align: center;
+            color: var(--text-main);
+        }
+
+    </style>
+</head>
+
+<body>
+    <header class="top-nav">
+        <div class="nav-branding">
+            <span id="system_name"></span>
+            <div id="task-nav-container" class="nav-task-switcher"></div>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <aside class="left-sidebar">
+            <div class="sidebar-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 20px;">
+                <div class="algo-group-header">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="9" y1="3" x2="9" y2="21"></line>
+                    </svg>
+                    <span id="algo-title-sidebar">Clusters</span>
+                </div>
+
+                <div class="cluster-nav-list" id="cluster-list-container"></div>
+            </div>
+
+            <div class="sidebar-section progress-section">
+                <h3 style="margin-bottom: 8px;">Progress</h3>
+                <div id="task-progress-container"></div>
+            </div>
+
+            <button class="btn-export" id="download-btn" onclick="openParticipantModal()" disabled>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Download (.JSON)
+            </button>
+        </aside>
+
+        <section class="center-workspace" id="workspace-container">
+            <div class="empty-state">Loading data...</div>
+        </section>
+
+        <aside class="guidance-dock">
+            <div class="dock-header">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                <h4>Relevancy Rating</h4>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>Likert scale</h3>
+
+                <div class="rubric-list">
+                    <div class="rubric-item" style="border-left-color: #42a5f5;">
+                        <span class="rubric-score">Very relevant (5)</span>
+                        The cluster title and description contains sufficient information to answer the entire question.
+                    </div>
+
+                    <div class="rubric-item" style="border-left-color: #64b5f6;">
+                        <span class="rubric-score">Relevant (4)</span>
+                        The cluster's title and description contains information to answer part of the question.
+                    </div>
+
+                    <div class="rubric-item" style="border-left-color: #90caf9;">
+                        <span class="rubric-score">Distantly relevant (3)</span>
+                        The cluster's title and description does not contain information to answer the question, but the content relates vaguely to it.
+                    </div>
+
+                    <div class="rubric-item" style="border-left-color: #bbdefb;">
+                        <span class="rubric-score">Less relevant (2)</span>
+                        The cluster's title and description does not contain information to answer the question, but some entities relate to it.
+                    </div>
+
+                    <div class="rubric-item" style="border-left-color: #e3f2fd;">
+                        <span class="rubric-score">Not relevant (1)</span>
+                        The cluster's title and description has no relation to the question.
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+
+    <div class="modal-overlay" id="participant-modal" style="display: none;">
+        <div class="modal-box">
+            <h3>Participant ID Required</h3>
+
+            <form onsubmit="confirmParticipantDownload(event)">
+                <input
+                    type="text"
+                    id="participant-id-input"
+                    class="participant-id-input"
+                    placeholder="e.g., G10M7"
+                    autocomplete="off"
+                >
+
+                <div class="participant-help-text">
+                    Please enter your provided participant ID to download the file.
+                </div>
+
+                <div class="participant-error" id="participant-id-error"></div>
+
+                <button type="submit" class="modal-download-btn">
+                    Download
+                </button>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        const SYSTEM_NAME = "YARN";
+        const ALGORITHM_NAME = "ARC";
+
+        /*
+            These placeholders will be replaced by build_final_html.py.
+            Do not edit them manually.
+        */
+        const TASKS = [
+    {
+        "id": "task1",
+        "name": "Task 1: Component “Resource manager scheduler",
+        "scenario": "As a developer delving into Apache Hadoop Yarn internals, your task is to understand the design decisions behind the Resource manager (capacity) scheduler component, including capacities. You aim to learn its functionality and grasp its inner workings from components, connectors, and architectural solutions.",
+        "questions": [
+            {
+                "id": "q1",
+                "text": "<h3>Existence</h3><b>Question 1:</b> What are the components and connectors of the resource manager (capacity) scheduler?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q1</u>: Briefly <u>name and describe each component</u>, determine their <u>type (physical or logical)</u>, determine <u>how they are connected</u>, and <u>how they achieve the requirements</u> of resource manager (capacity) scheduler."
+            },
+            {
+                "id": "q2",
+                "text": "<h3>Property</h3><b>Question 2:</b> What quality attributes and quality attribute solutions (e.g., patterns or tactics) are considered in the design of resource manager (capacity) scheduler?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q2</u>: Mention the considered <u>quality attributes</u> and <u>describe the solutions</u> applied, and <u>how they achieve the requirements</u>."
+            },
+            {
+                "id": "q3",
+                "text": "<h3>Executive</h3><b>Question 3:</b> What are the technologies applied in the resource manager (capacity) scheduler, and what is the rationale behind selecting these technologies?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q3</u>: Mention the technologies and tools, their associated <u>components</u>, <u>rationale</u>, and <u>how they achieve the requirements</u>."
+            }
+        ]
+    },
+    {
+        "id": "task2",
+        "name": "Task 2: Requirement Performance",
+        "scenario": "Performance is a key feature of Hadoop Yarn. Understanding how this feature is designed in Yarn will provide insight into how data stored with Yarn can be efficiently retrieved. You are tasked with exploring the architectural decisions that enable high performance of Hadoop Yarn capacity scheduler.",
+        "questions": [
+            {
+                "id": "q1",
+                "text": "<h3>Existence</h3><b>Question 1:</b> What components and connectors in Yarn resource manager (capacity) scheduler contribute to its performance?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q1</u>: Briefly <u>name and describe each component</u>, determine their <u>type (physical or logical)</u>, determine <u>how they are connected</u>, and <u>how they achieve the requirements</u> of resource manager (capacity) scheduler."
+            },
+            {
+                "id": "q2",
+                "text": "<h3>Property</h3><b>Question 2:</b> What solutions (e.g., patterns or tactics) are implemented to support the performance quality attribute in the Yarn resource manager (capacity) scheduler?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q2</u>: Mention the considered <u>quality attributes</u> and <u>describe the solutions</u> applied, and <u>how they achieve the requirements</u>."
+            },
+            {
+                "id": "q3",
+                "text": "<h3>Executive</h3><b>Question 3:</b> Which tools and technologies are integrated into Yarn resource manager (capacity) scheduler to ensure performance?<br>Open the <u style='color: var(--accent-green)'>Result Sheet of Q3</u>: Mention the technologies and tools, their associated <u>components</u>, <u>rationale</u>, and <u>how they achieve the requirements</u>."
+            }
+        ]
+    }
+];
+        const clusters = [
+    {
+        "cluster_ID": "Cluster_0",
+        "title": "YARN Capacity Scheduler Resource Management",
+        "description": " **Components and Interactions:** This architectural cluster of the YARN (Yet Another Resource Negotiator) Capacity Scheduler focuses on resource management and queue configuration. Key components include: - **Resource Calculators** (e.g., `AbsoluteResourceCapacityCalculator`): Determine resource capacities for queues. - **Queue Management Policies** (e.g., `QueueManagementDynamicEditPolicy`, `AutoCreatedQueueDeletionPolicy`): Manage auto-created queues, handle deletions, and apply dynamic edits based on custom policies. - **Metrics and Monitoring** (e.g., `CSQueueMetrics`, `CapacitySchedulerMetrics`): Track resource utilization, allocation latencies, and performance indicators. - **Queue Configuration Management** (e.g., `QueueConfigurationAutoRefreshPolicy`): Automatically refresh queue configurations based on file changes. These components interact through the YARN Resource Manager context (`RMContext`), Capacity Scheduler instance, and shared configuration objects, ensuring cohesive resource management and queue operation. **Quality Attributes:** - **Scalability:** Designed to handle dynamic queue management and resource calculations for multiple queues and nodes. - **Maintainability:** Modular design with clear, focused responsibilities for each component facilitates updates and debugging. - **Extensibility:** Custom policies (e.g., `AutoCreatedQueueManagementPolicy`) can be integrated for tailored queue management strategies. - **Performance:** Metrics collection (e.g., allocation latencies) aids in optimizing scheduler performance.",
+        "files": [
+            {
+                "path": "https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/AbsoluteResourceCapacityCalculator.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/policy/AutoCreatedQueueDeletionPolicy.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/CSQueueInfoProvider.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/CSQueueMetrics.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/CapacitySchedulerMetrics.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/policy/QueueConfigurationAutoRefreshPolicy.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/QueueManagementDynamicEditPolicy.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/ResourceCalculationDriver.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/UsersManager.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/WeightQueueCapacityCalculator.java"
+            }
+        ]
+    },
+    {
+        "cluster_ID": "Cluster_1",
+        "title": "Hadoop YARN Capacity Scheduler Queue Management",
+        "description": " **Components and Interactions:** The Hadoop YARN Capacity Scheduler's queue management cluster consists of interconnected modules: - **Policy**: Determines queue ordering based on priorities, capacities, and node partitions via the `QueueOrderingPolicy` interface. - **Preemption**: Manages preemptable resources and containers across hierarchical queues, ensuring efficient tracking and updates. - **Queue Management**: Oversees leaf queue configurations, capacity entitlements, and resource allocation within the YARN ecosystem. - **Configurations & Settings**: Various root files (`AutoCreatedLeafQueueConfig`, `CSQueuePreemptionSettings`, `ConfiguredNodeLabels`, `LeafQueue`, and `QueueManagementChange`) work in concert to provide and manage queue configurations, preemption settings, node labels, and change management. **Quality Attributes:** - **Scalability**: Modular design and use of interfaces (e.g., `QueueOrderingPolicy`) enable scalability by allowing for the addition of new queue ordering strategies without disrupting the core scheduler. - **Fairness**: The `Policy` module ensures fair resource allocation based on queue priorities and capacities. - **Maintainability**: Employing design patterns (Strategy, Hierarchical Structure, Encapsulation) and Java best practices (e.g., Stream API) enhances maintainability. - **Extensibility**: The architecture supports extensibility through the modular approach, particularly evident in the `Preemption` module's management of hierarchical",
+        "files": [
+            {
+                "path": "https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/queuemanagement/AutoCreatedLeafQueueConfig.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/queuemanagement/AutoCreatedQueueManagementPolicy.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/CSQueuePreemptionSettings.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/queuemanagement/ConfiguredNodeLabels.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/KillableContainer.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/LeafQueue.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/queuemanagement/LeafQueueEntitlements.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/PreemptableQueue.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/PreemptionManager.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/policy/PriorityUtilizationQueueOrderingPolicy.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/queuemanagement/QueueManagementChange.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/QueueNodeLabelsSettings.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/policy/QueueOrderingPolicy.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/queuemanagement/QueuePrefixes.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/QueueStateHelper.java"
+            }
+        ]
+    },
+    {
+        "cluster_ID": "Cluster_2",
+        "title": "Hadoop YARN Capacity Scheduler Queue Management2",
+        "description": " **Components and Interactions:** This architectural cluster within Hadoop YARN's Capacity Scheduler manages queue capacities and states, ensuring efficient resource allocation for job executions. Key components include: - `QueueManagement`: Oversees hierarchical queue structures and capacity assignments. - `AbstractAutoCreatedLeafQueue` & `AutoCreatedLeafQueue`: Handle dynamic leaf queue management, focusing on capacity adjustments and resource allocation. - `AbstractCSQueue`, `AbstractLeafQueue`, `AbstractManagedParentQueue`, and `AbstractParentQueue`: Provide foundational implementations for various queue types, managing resources, capacities, and access control. **Quality Attributes:** - **Scalability**: Hierarchical queue structures and dynamic capacity management enable efficient resource allocation across multiple queues. - **Fairness**: Enforcement of queue and user-level constraints (e.g., via `CSMaxRunningAppsEnforcer`) ensures equitable resource distribution. - **Maintainability**: Utilization of abstract classes and interfaces facilitates extensibility and ease of modification. - **Security**: Access Control Lists (ACLs) in `AbstractParentQueue` enforce secure queue operations. **Technology Used:** - **Java Patterns**: Hierarchical structure, State Machine Pattern (`GuaranteedOrZeroCapacityOverTimePolicy`), and Thread-Safe Updates (read-write locks). - **Frameworks/Tools**: Hadoop YARN, Java (for development and execution).",
+        "files": [
+            {
+                "path": "https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/queuemanagement/AbstractAutoCreatedLeafQueue.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/AbstractCSQueue.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/AbstractLeafQueue.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/queuemanagement/AbstractManagedParentQueue.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/AbstractParentQueue.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/queuemanagement/AutoCreatedLeafQueue.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/CSMaxRunningAppsEnforcer.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/CSQueue.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/queuemanagement/CSQueueUtils.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/CapacityScheduler.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/CapacitySchedulerConfigValidator.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/CapacitySchedulerQueueCapacityHandler.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/CapacitySchedulerQueueManager.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/queuemanagement/DeactivatedLeafQueuesByLabel.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/queuemanagement/GuaranteedOrZeroCapacityOverTimePolicy.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/queuemanagement/ManagedParentQueue.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/ParentQueue.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/PlanQueue.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/QueueAppLifetimeAndLimitSettings.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/ReservationQueue.java"
+            }
+        ]
+    },
+    {
+        "cluster_ID": "Cluster_3",
+        "title": "Hadoop YARN Capacity Scheduler Architecture",
+        "description": " **Components and Interactions:** The Capacity Scheduler in Hadoop YARN consists of interconnected modules: - **Configuration Management (conf/)**: Centralized interface for loading, storing, and retrieving configuration settings. - **Queue Management (queuemanagement/)**: Organizes resource allocation and job scheduling through queue configurations. - **Placement (placement/)**: Ensures efficient resource utilization by managing configuration and placement logic. - **Core Scheduler Components**: Includes classes like `CSQueueUsageTracker`, `CapacityHeadroomProvider`, `CapacitySchedulerContext`, and `CapacitySchedulerQueueContext`, which collaborate to manage resource usage, calculate available resources, provide scheduler context, and store queue-related information. **Quality Attributes:** - **Scalability**: Designed to handle multiple queues, users, and applications, ensuring efficient resource allocation. - **Fairness**: Implements preemption and capacity scheduling to ensure fair resource distribution among users and queues. - **Maintainability**: Utilizes modular design (e.g., separate configuration management) for easier updates and troubleshooting. - **Extensibility**: Employs interfaces and abstract classes (e.g., `CSConfigurationProvider`) to facilitate custom implementations. **Technology Used:** - **Java**: Primary programming language. - **Design Patterns**: - **Factory Pattern** (e.g., `YarnConfigurationStoreFactory`). - **Service Interface Pattern** (e.g., interactions with Y ...",
+        "files": [
+            {
+                "path": "https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/allocator/CSAMContainerLaunchDiagnosticsConstants.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/CSConfigurationProvider.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/CSQueueUsageTracker.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/CapacityHeadroomProvider.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/CapacitySchedulerContext.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/queuemanagement/CapacitySchedulerQueueContext.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/ConfigurationProperties.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/conf/FileBasedCSConfigurationProvider.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/QueueAllocationSettings.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/QueueCapacityUpdateContext.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/QueueUpdateWarning.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/allocator/SchedulingMode.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/UserInfo.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/UserWeights.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/conf/YarnConfStoreVersionIncompatibleException.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/conf/YarnConfigurationStoreFactory.java"
+            }
+        ]
+    },
+    {
+        "cluster_ID": "Cluster_4",
+        "title": "YARN Capacity Scheduler Placement Engine",
+        "description": " **Components and Interactions:** The Placement Engine module generates and manages placement rules and configurations for informed resource allocation in Hadoop YARN. Key components collaborate via a data-driven approach: `GeneratePojos` creates Java classes from JSON schemas, `MappingRuleCreator` converts JSON rules to executable `MappingRule` objects, and supporting classes facilitate data transformation. **Quality Attributes:** * **Scalability:** Supported through data-driven approach and modular design. * **Maintainability:** Enhanced by use of design patterns (Factory) and standardized serialization (JSON). * **Extensibility:** Implicit in Factory Pattern, allowing for diverse input handling. **Technology Used:** * **Java** * **Factory Design Pattern** * **JSON Serialization/Deserialization (Jackson annotations)**",
+        "files": [
+            {
+                "path": "https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/placement/schema/GeneratePojos.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/LegacyMappingRuleToJson.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/placement/schema/MappingRuleCreator.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/placement/schema/MappingRulesDescription.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/placement/schema/Rule.java"
+            }
+        ]
+    },
+    {
+        "cluster_ID": "Cluster_5",
+        "title": "YARN Capacity Scheduler Priority Management",
+        "description": " **Components and Interactions:** This architectural cluster manages application priority in YARN (Yet Another Resource Negotiator) through interconnected components: - `AppPriorityACLConfigurationParser` parses and validates ACL configurations from `capacity-scheduler.xml`. - `AppPriorityACLGroup` encapsulates ACL information tied to application priorities, enabling priority-based access control. - `WorkflowPriorityMappingsManager` dynamically adjusts application priorities based on workflow IDs and queue hierarchies, interacting with `CapacityScheduler` for initialization. **Quality Attributes:** - **Scalability:** Supported through dynamic priority adjustments and recursive queue hierarchy resolution. - **Security:** Implemented via Access Control List (ACL) configurations for users and groups. - **Maintainability:** Encapsulation and getter/setter methods in `AppPriorityACLGroup` facilitate easy modification. - **Extensibility:** `WorkflowPriorityMappingsManager` allows for override configurations, enabling adaptability. **Technology Used:** - **Java Patterns:** Enum-driven parsing (in `AppPriorityACLConfigurationParser`), encapsulation (in `AppPriorityACLGroup`). - **Frameworks/Tools:** Apache Hadoop YARN (`org.apache.hadoop` packages), Java standard libraries for regular expressions and logging.",
+        "files": [
+            {
+                "path": "https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/AppPriorityACLConfigurationParser.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/AppPriorityACLGroup.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/WorkflowPriorityMappingsManager.java"
+            }
+        ]
+    },
+    {
+        "cluster_ID": "Cluster_6",
+        "title": "Hadoop YARN Capacity Scheduler: Resource Allocation",
+        "description": " **Components and Interactions:** The Capacity Scheduler's resource allocation cluster consists of the 'allocator' module and supporting classes like `CSAssignment`. The `allocator` module, through its components (`AbstractContainerAllocator`, `ContainerAllocator`, and `RegularContainerAllocator`), manages container resource allocation. It collaborates internally via inheritance and delegation, ensuring efficient resource utilization. `CSAssignment` encapsulates allocation details, tracking assignment status and providing attribute access. **Quality Attributes:** - **Scalability:** Modular design and delegation in 'allocator' support handling increased allocation requests. - **Maintainability:** Use of Template Method Pattern and Enumerations (e.g., `AllocationState`) enhances code readability and ease of modification. - **Efficiency:** Optimized resource allocation logic within 'allocator' ensures effective cluster resource utilization. **Technology Used:** - **Java Patterns:** Template Method, Delegation - **Java Constructs:** Enumerations (for type safety and readability), Inheritance (for modular allocation logic) - **Tools/Frameworks:** None explicitly identified within the provided summaries.",
+        "files": [
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/AllocationState.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/allocator/CSAssignment.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/allocator/ContainerAllocation.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/allocator/ContainerAllocator.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/allocator/RegularContainerAllocator.java"
+            }
+        ]
+    },
+    {
+        "cluster_ID": "Cluster_7",
+        "title": "Capacity Scheduler Configuration Management",
+        "description": "**Components and Interactions:** The Configuration Management Module, within the Capacity Scheduler, comprises interchangeable storage solutions (filesystem, in-memory, LevelDB, ZooKeeper) that collaborate via the YarnConfigurationStore interface. These components interact with the MutableCSConfigurationProvider to manage and apply configuration updates, enforcing ACL policies. **Quality Attributes:** * **Extensibility:** Supported through the Strategy Pattern, allowing for easy integration of new storage solutions. * **Maintainability:** Enhanced by the modular design and use of interfaces. * **Security:** ACL (Access Control List) policies are enforced during configuration updates. **Technology Used:** * **Java Patterns:** Strategy Pattern * **Java Frameworks/Tools:** Serialization/Deserialization mechanisms (likely Java Serialization or similar)",
+        "files": [
+            {
+                "path": "https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/conf/FSSchedulerConfigurationStore.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/conf/InMemoryConfigurationStore.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/conf/LeveldbConfigurationStore.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/conf/MutableCSConfigurationProvider.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/conf/YarnConfigurationStore.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/conf/ZKConfigurationStore.java"
+            }
+        ]
+    },
+    {
+        "cluster_ID": "Cluster_8",
+        "title": "Hadoop YARN Capacity Scheduler Resource Management",
+        "description": " **Components and Interactions:** This architectural cluster within Hadoop YARN's Capacity Scheduler focuses on resource management for queues. Key components include: - `QueueCapacities`: Manages queue capacity metrics. - `QueueCapacityVector`: Represents a vector of resource capacities with calculation types. - `AbstractQueueCapacityCalculator` and its subclass `PercentageQueueCapacityCalculator`: Calculate queue resource capacities. - `QueueResourceRoundingStrategy` and its implementation `DefaultQueueResourceRoundingStrategy`: Round calculated resource values. These components interact through the calculation and application of queue capacities, involving parsing of configuration (via `conf` module), calculation of resource prerequisites, and application of rounding strategies to ensure efficient and fair resource allocation. **Quality Attributes:** - **Scalability**: Designed to handle multiple queues and resources with dynamic capacity adjustments. - **Fairness**: Implements rounding strategies to ensure equitable resource allocation. - **Maintainability**: Utilizes modular design (e.g., strategy pattern for rounding) for ease of modification or extension. - **Extensibility**: Interfaces like `QueueResourceRoundingStrategy` allow for the addition of new rounding strategies without altering existing code. **Technology Used:** - **Java**: The primary programming language. - **Design Patterns**: - **Parser Chain Pattern** (in `conf` module): For handling multiple capacity string formats. - **Strategy Pattern** (in `QueueResource ...",
+        "files": [
+            {
+                "path": "https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/AbstractQueueCapacityCalculator.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/CalculationContext.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/DefaultQueueResourceRoundingStrategy.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/PercentageQueueCapacityCalculator.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/QueueCapacities.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/conf/QueueCapacityConfigParser.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/QueueCapacityVector.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/QueueResourceRoundingStrategy.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/ResourceVector.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/RootCalculationDriver.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/RootQueueCapacityCalculator.java"
+            }
+        ]
+    },
+    {
+        "cluster_ID": "Cluster_9",
+        "title": "Hadoop YARN Capacity Scheduler Configuration Management",
+        "description": " **Components and Interactions:** This architectural cluster manages Hadoop YARN Capacity Scheduler configurations, ensuring secure updates and proper resource allocation. Key components interact as follows: - `conf/` module handles configuration updates, leveraging the Command Pattern and Access Control List (ACL) Pattern for security. - `AutoCreatedQueueTemplate.java` applies template settings to child queues based on parent configurations. - `CSQueueStore.java` stores and retrieves Capacity Scheduler queues, resolving name ambiguities. - `CapacitySchedulerConfiguration.java` parses and loads configuration from XML files, managing resource allocation and queue ordering policies. - `QueuePath.java` represents and manipulates queue paths for easy access and validation. **Quality Attributes:** - **Security:** ACL Pattern ensures authorized configuration updates. - **Scalability:** Efficient queue management and resource allocation support large-scale YARN environments. - **Maintainability:** Modular design (e.g., separate configuration management) facilitates updates and debugging. - **Extensibility:** Utilization of patterns (Command, ACL) and modular structure enables easier integration of new features. **Technology Used:** - **Java Patterns:** Command Pattern, Access Control List (ACL) Pattern. - **Frameworks/Tools:** Dependency Injection for contextual provision, XML for configuration files.",
+        "files": [
+            {
+                "path": "https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/AutoCreatedQueueTemplate.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/CSQueueStore.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/CapacitySchedulerConfiguration.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/conf/ConfigurationUpdateAssembler.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/conf/QueueAdminConfigurationMutationACLPolicy.java"
+            },
+            {
+                "path": " https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/capacity/QueuePath.java"
+            }
+        ]
+    }
+];
+
+        document.getElementById("system_name").textContent = "Project: " + SYSTEM_NAME;
+
+        let currentActiveTask = TASKS.length > 0 ? TASKS[0].id : null;
+        let currentActiveCluster = null;
+        let evaluationAnswers = {};
+
+        function initDashboard() {
+            renderTopTaskSwitcher();
+            renderSidebar();
+            updateProgressIndicators();
+
+            if (clusters.length > 0) {
+                selectCluster(clusters[0].cluster_ID);
+            } else {
+                document.getElementById("workspace-container").innerHTML = `
+                    <div class="empty-state">No clusters found.</div>
+                `;
+            }
+        }
+
+        function renderTopTaskSwitcher() {
+            const container = document.getElementById("task-nav-container");
+            container.innerHTML = "";
+
+            TASKS.forEach(task => {
+                const btn = document.createElement("button");
+                btn.className = `nav-task-btn ${task.id === currentActiveTask ? "active" : ""}`;
+                btn.innerText = task.name;
+
+                btn.onclick = () => {
+                    currentActiveTask = task.id;
+
+                    document.querySelectorAll(".nav-task-btn").forEach(b => {
+                        b.classList.remove("active");
+                    });
+
+                    btn.classList.add("active");
+
+                    renderSidebar();
+                    renderWorkspaceCard();
+                    updateProgressIndicators();
+                };
+
+                container.appendChild(btn);
+            });
+        }
+
+        function renderSidebar() {
+            const container = document.getElementById("cluster-list-container");
+            let html = "";
+
+            clusters.forEach(cluster => {
+                html += `
+                    <button class="cluster-nav-btn ${currentActiveCluster === cluster.cluster_ID ? "active" : ""}"
+                            id="nav-${cluster.cluster_ID}"
+                            onclick="selectCluster('${cluster.cluster_ID}')">
+                        <span>${cluster.cluster_ID}</span>
+                    </button>
+                `;
+            });
+
+            container.innerHTML = html;
+            updateProgressIndicators();
+        }
+
+        function checkTaskCompletion(clusterId, taskId) {
+            const task = TASKS.find(t => t.id === taskId);
+
+            if (!task) return false;
+
+            return task.questions.every(q => {
+                const uniqueKey = `${clusterId}_${taskId}_${q.id}`;
+                return evaluationAnswers[uniqueKey];
+            });
+        }
+
+        function selectCluster(clusterId) {
+            currentActiveCluster = clusterId;
+
+            document.querySelectorAll(".cluster-nav-btn").forEach(btn => {
+                btn.classList.remove("active");
+            });
+
+            const activeBtn = document.getElementById(`nav-${clusterId}`);
+
+            if (activeBtn) {
+                activeBtn.classList.add("active");
+            }
+
+            renderWorkspaceCard();
+        }
+
+        function toggleAccordion(element) {
+            element.parentElement.classList.toggle("open");
+        }
+
+        function renderWorkspaceCard() {
+            const container = document.getElementById("workspace-container");
+            const cluster = clusters.find(c => c.cluster_ID === currentActiveCluster);
+
+            if (!cluster) {
+                container.innerHTML = `<div class="empty-state">Select a cluster from the sidebar to begin evaluation.</div>`;
+                return;
+            }
+
+            const activeTaskData = TASKS.find(t => t.id === currentActiveTask);
+
+            if (!activeTaskData) {
+                container.innerHTML = `<div class="empty-state">No active task selected.</div>`;
+                return;
+            }
+
+            let filesHTML = "";
+
+            cluster.files.forEach(file => {
+                filesHTML += `
+                    <a href="${file.path}" target="_blank" class="file-tag" title="${file.path}">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                        ${file.path.split("/").pop()}
+                    </a>
+                `;
+            });
+
+            let evalRowsHTML = "";
+
+            activeTaskData.questions.forEach(question => {
+                const uniqueKey = `${cluster.cluster_ID}_${activeTaskData.id}_${question.id}`;
+                const savedValue = evaluationAnswers[uniqueKey] || "";
+                let optionsHTML = "";
+
+                for (let score = 1; score <= 5; score++) {
+                    let radioLabel = "";
+                    let color = "#";
+
+                    switch (score) {
+                        case 1:
+                            radioLabel = "Not relevant (1)";
+                            color += "e3f2fd";
+                            break;
+                        case 2:
+                            radioLabel = "Less relevant (2)";
+                            color += "bbdefb";
+                            break;
+                        case 3:
+                            radioLabel = "Distantly relevant (3)";
+                            color += "90caf9";
+                            break;
+                        case 4:
+                            radioLabel = "Relevant (4)";
+                            color += "64b5f6";
+                            break;
+                        case 5:
+                            radioLabel = "Very relevant (5)";
+                            color += "42a5f5";
+                            break;
+                    }
+
+                    const isSelected = savedValue === radioLabel ? "selected" : "";
+
+                    optionsHTML += `
+                        <label class="rating-btn-label ${isSelected}"
+                               style="background:${color}"
+                               onclick="recordRating('${uniqueKey}', '${radioLabel}', this)">
+                            <input type="radio"
+                                   name="${uniqueKey}"
+                                   value="${radioLabel}"
+                                   style="display:none;"
+                                   ${isSelected ? "checked" : ""}>
+                            <span>${radioLabel}</span>
+                        </label>
+                    `;
+                }
+
+                evalRowsHTML += `
+                    <div class="question-item">
+                        <div class="question-text">${question.text}</div>
+                        <div class="rating-row">${optionsHTML}</div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = `
+                <div class="cluster-card">
+                    <div class="cluster-header">
+                        <div class="cluster-title-area">
+                            <span class="cluster-id-pill">${cluster.cluster_ID}</span>
+                            <h3 class="cluster-title">${cluster.title}</h3>
+                        </div>
+                    </div>
+
+                    <div class="cluster-body-stacked">
+                        <div class="desc-box">
+                            <div class="section-primary-heading">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                                Description
+                            </div>
+                            <div class="cluster-desc-content">${cluster.description}</div>
+                        </div>
+
+                        <div class="file-section-accordion">
+                            <div class="accordion-header" onclick="toggleAccordion(this)">
+                                <div class="accordion-primary-heading">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                        <polyline points="15 3 21 3 21 9"></polyline>
+                                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                                    </svg>
+                                    Source Code files (${cluster.files.length} files)
+                                </div>
+
+                                <svg class="accordion-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </div>
+
+                            <div class="accordion-content">
+                                <div class="file-grid-tray">${filesHTML}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cluster-evaluation-bar">
+                        <div class="scenario-box">
+                            <div class="section-primary-heading" style="margin-bottom: 8px;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                                Task Scenario
+                            </div>
+                            <p>${activeTaskData.scenario}</p>
+                        </div>
+
+                        <div class="section-primary-heading">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                            Task Questions
+                        </div>
+
+                        <div class="eval-questions">
+                            ${evalRowsHTML}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            container.scrollTop = 0;
+        }
+
+        function recordRating(uniqueKey, radioLabel, element) {
+            evaluationAnswers[uniqueKey] = radioLabel;
+
+            const parentRow = element.parentElement;
+
+            parentRow.querySelectorAll(".rating-btn-label").forEach(label => {
+                label.classList.remove("selected");
+            });
+
+            element.classList.add("selected");
+
+            const input = element.querySelector("input[type='radio']");
+
+            if (input) {
+                input.checked = true;
+            }
+
+            updateProgressIndicators();
+        }
+
+        function updateProgressIndicators() {
+            const container = document.getElementById("task-progress-container");
+
+            if (!container) return;
+
+            let html = "";
+
+            TASKS.forEach(task => {
+                let dotsHTML = "";
+
+                clusters.forEach(cluster => {
+                    const isComplete = checkTaskCompletion(cluster.cluster_ID, task.id);
+
+                    dotsHTML += `
+                        <span class="progress-cluster-dot ${isComplete ? "completed" : ""}"
+                              title="${task.name} - ${cluster.cluster_ID}">
+                        </span>
+                    `;
+                });
+
+                html += `
+                    <div class="progress-task-row">
+                        <div class="progress-task-title">${task.name}</div>
+                        <div class="progress-dot-row">
+                            ${dotsHTML}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+
+            updateDownloadButtonState();
+        }
+
+        function areAllEvaluationsComplete() {
+            if (!TASKS.length || !clusters.length) {
+                return false;
+            }
+
+            return TASKS.every(task => {
+                return clusters.every(cluster => {
+                    return checkTaskCompletion(cluster.cluster_ID, task.id);
+                });
+            });
+        }
+
+        function updateDownloadButtonState() {
+            const downloadBtn = document.getElementById("download-btn");
+
+            if (!downloadBtn) return;
+
+            const isComplete = areAllEvaluationsComplete();
+
+            downloadBtn.disabled = !isComplete;
+
+            if (isComplete) {
+                downloadBtn.title = "All evaluations are complete. You can now download your responses.";
+            } else {
+                downloadBtn.title = "Complete all questions for all clusters and tasks before downloading.";
+            }
+        }
+
+        function openParticipantModal() {
+            if (!areAllEvaluationsComplete()) {
+                return;
+            }
+
+            const modal = document.getElementById("participant-modal");
+            const input = document.getElementById("participant-id-input");
+            const error = document.getElementById("participant-id-error");
+
+            if (error) {
+                error.textContent = "";
+            }
+
+            if (input) {
+                input.value = "";
+            }
+
+            modal.style.display = "flex";
+
+            setTimeout(() => {
+                if (input) input.focus();
+            }, 50);
+        }
+
+        function confirmParticipantDownload(event) {
+            event.preventDefault();
+
+            const input = document.getElementById("participant-id-input");
+            const error = document.getElementById("participant-id-error");
+
+            const participantId = input.value.trim();
+
+            if (!participantId) {
+                error.textContent = "Participant ID is required before downloading.";
+                input.focus();
+                return;
+            }
+
+            error.textContent = "";
+
+            exportDataAsJSON(participantId);
+        }
+
+        function exportDataAsJSON(participantId) {
+            const exportStructure = {
+                exported_at: new Date().toISOString(),
+                participant_id: participantId,
+                system: SYSTEM_NAME,
+                algorithm: ALGORITHM_NAME,
+                tasks: TASKS.map(task => task.name),
+                evaluation_results: clusters.map(cluster => {
+                    const taskEvals = {};
+
+                    TASKS.forEach(task => {
+                        const qEvals = {};
+
+                        task.questions.forEach(question => {
+                            qEvals[question.id] = evaluationAnswers[`${cluster.cluster_ID}_${task.id}_${question.id}`] || "Not Evaluated";
+                        });
+
+                        taskEvals[task.id] = qEvals;
+                    });
+
+                    return {
+                        ...cluster,
+                        task_evaluations: taskEvals
+                    };
+                })
+            };
+
+            const jsonText = JSON.stringify(exportStructure, null, 4);
+            const blob = new Blob([jsonText], { type: "application/json;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+
+            const safeParticipantId = participantId.replace(/[^a-zA-Z0-9_-]/g, "_");
+
+            const downloadAnchor = document.createElement("a");
+            downloadAnchor.href = url;
+            downloadAnchor.download = `${SYSTEM_NAME}_${ALGORITHM_NAME}_${safeParticipantId}_Results.json`;
+
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+                showThankYouPage();
+            }, 300);
+        }
+
+        function showThankYouPage() {
+            document.body.innerHTML = `
+                <div class="thank-you-page">
+                    <div class="thank-you-message">
+                        Thank you for completing this task. Your responses have been saved to the downloaded .json file.
+                        Please upload this file to PANDA along with the <b>Result Sheet</b> once you have completed all other assigned tasks.
+                    </div>
+                </div>
+            `;
+
+            document.body.style.margin = "0";
+            document.body.style.overflow = "hidden";
+            document.documentElement.style.overflow = "hidden";
+        }
+
+        window.onload = initDashboard;
+    </script>
+</body>
+</html>
